@@ -4,6 +4,10 @@ import '../models/photo.dart';
 import '../services/storage_service.dart';
 import '../widgets/confirmation_dialog.dart';
 import '../services/date_format_service.dart';
+import '../theme/app_theme.dart';
+import '../widgets/edit_annotation_sheet.dart';
+import '../widgets/custom_fab.dart';
+import '../utils/page_transitions.dart';
 
 class PhotoViewScreen extends StatefulWidget {
   final Photo photo;
@@ -11,12 +15,16 @@ class PhotoViewScreen extends StatefulWidget {
   final StorageService storageService;
   final VoidCallback? onPhotoDeleted;
   final Function(String)? onAnnotationUpdated;
+  final String talkName;
+  final String? presenterName;
 
   const PhotoViewScreen({
     super.key,
     required this.photo,
     required this.talkId,
     required this.storageService,
+    required this.talkName,
+    this.presenterName,
     this.onPhotoDeleted,
     this.onAnnotationUpdated,
   });
@@ -26,178 +34,201 @@ class PhotoViewScreen extends StatefulWidget {
 }
 
 class PhotoViewScreenState extends State<PhotoViewScreen> {
-  bool _isEditing = false;
-  late TextEditingController _annotationController;
-  String? _errorText;
   late String _currentAnnotation;
 
   @override
   void initState() {
     super.initState();
     _currentAnnotation = widget.photo.annotation;
-    _annotationController = TextEditingController(text: _currentAnnotation);
   }
 
-  @override
-  void dispose() {
-    _annotationController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveAnnotation() async {
-    final newAnnotation = _annotationController.text.trim();
-
-    await widget.storageService.updatePhotoAnnotation(
-      widget.talkId,
-      widget.photo.id,
-      newAnnotation,
-    );
-
-    if (!mounted) return;
-
-    // Notify parent of the update
-    widget.onAnnotationUpdated?.call(newAnnotation);
-
-    setState(() {
-      _currentAnnotation = newAnnotation;
-      _isEditing = false;
-      _errorText = null;
-    });
-
-    // Show success message
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Annotation updated'),
-        duration: Duration(seconds: 2),
+  Future<void> _editAnnotation() async {
+    final editResult = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) => EditAnnotationSheet(
+        initialAnnotation: _currentAnnotation,
+        onSave: (newAnnotation) {
+          Navigator.pop(sheetContext, newAnnotation);
+        },
       ),
     );
+
+    if (!mounted || editResult == null) return;
+
+    try {
+      await widget.storageService.updatePhotoAnnotation(
+        widget.talkId,
+        widget.photo.id,
+        editResult,
+      );
+
+      if (!mounted) return;
+      
+      // Notify parent of the update
+      widget.onAnnotationUpdated?.call(editResult);
+
+      setState(() {
+        _currentAnnotation = editResult;
+      });
+
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Annotation updated'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update annotation'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
-  void _cancelEditing() {
-    setState(() {
-      _isEditing = false;
-      _errorText = null;
-      _annotationController.text = _currentAnnotation;
-    });
+  void _deletePhoto() {
+    showDialog(
+      context: context,
+      builder: (context) => ConfirmationDialog(
+        title: 'Delete Photo',
+        message: 'Are you sure you want to delete this photo? This cannot be undone.',
+        onConfirm: () async {
+          await widget.storageService.deletePhoto(widget.talkId, widget.photo);
+          widget.onPhotoDeleted?.call();
+          if (!mounted) return;
+          Navigator.of(context).pop(); // Pop the photo view
+        },
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => ConfirmationDialog(
-                  title: 'Delete Photo',
-                  message: 'Are you sure you want to delete this photo? This cannot be undone.',
-                  onConfirm: () async {
-                    await widget.storageService.deletePhoto(widget.talkId, widget.photo);
-                    widget.onPhotoDeleted?.call();
-                    if (!mounted) return;
-                    Navigator.of(context).pop(); // Pop the photo view
-                  },
-                ),
-              );
-            },
-          ),
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: AppTheme.primaryGradient,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: InteractiveViewer(
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: Image.file(
-                File(widget.photo.path),
-                fit: BoxFit.contain,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            color: Colors.white,
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Column(
+            children: [
+              Text(
+                widget.talkName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (widget.presenterName != null) ...[
+                    Text(
+                      widget.presenterName!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withAlpha(179),
+                      ),
+                    ),
+                    Text(
+                      " • ",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white.withAlpha(179),
+                      ),
+                    ),
+                  ],
+                  Text(
+                    DateFormatService.formatDateTime(widget.photo.createdAt),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withAlpha(179),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: Colors.white,
+              onPressed: _deletePhoto,
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () {
+                  // Nothing to do here now
+                },
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.file(
+                    File(widget.photo.path),
+                    fit: BoxFit.contain,
+                  ),
+                ),
               ),
             ),
-          ),
-          Container(
-            color: Theme.of(context).colorScheme.surface,
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: _isEditing
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TextField(
-                              controller: _annotationController,
-                              decoration: InputDecoration(
-                                labelText: 'Edit annotation',
-                                errorText: _errorText,
-                                border: const OutlineInputBorder(),
-                              ),
-                              maxLines: 3,
-                              autofocus: true,
-                            ),
-                            const SizedBox(height: 8.0),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: _cancelEditing,
-                                  child: Text(
-                                    'Cancel',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8.0),
-                                ElevatedButton(
-                                  onPressed: _saveAnnotation,
-                                  child: const Text('Save'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _currentAnnotation,
-                                style: Theme.of(context).textTheme.bodyLarge,
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.edit_outlined),
-                              onPressed: () {
-                                setState(() {
-                                  _isEditing = true;
-                                });
-                              },
-                              tooltip: 'Edit annotation',
-                            ),
-                          ],
-                        ),
+            Container(
+              color: Colors.transparent,
+              padding: const EdgeInsets.all(24.0),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _currentAnnotation.isNotEmpty 
+                          ? _currentAnnotation 
+                          : "No annotation provided",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontStyle: _currentAnnotation.isNotEmpty ? FontStyle.normal : FontStyle.italic,
+                        fontWeight: _currentAnnotation.isNotEmpty ? FontWeight.normal : FontWeight.w300,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      onPressed: _editAnnotation,
+                      tooltip: 'Edit annotation',
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8.0),
-                Text(
-                  DateFormatService.formatDateTime(widget.photo.createdAt),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

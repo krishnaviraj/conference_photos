@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class CreateTalkSheet extends StatefulWidget {
   final Function(String name, String? presenter) onCreateTalk;
@@ -34,7 +35,13 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 16.0,
         right: 16.0,
-        top: 16.0,
+        top: 24.0,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24.0),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -42,48 +49,93 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
         children: [
           Text(
             'Talk details',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24.0),
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Talk name',
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(color: Colors.black54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade500),
+              ),
+              contentPadding: const EdgeInsets.all(16),
             ),
+            style: const TextStyle(color: Colors.black87),
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: 16.0),
           TextField(
             controller: _presenterController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: "Who's talking?",
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(color: Colors.black54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade500),
+              ),
+              contentPadding: const EdgeInsets.all(16),
             ),
+            style: const TextStyle(color: Colors.black87),
             textCapitalization: TextCapitalization.words,
           ),
-          const SizedBox(height: 24.0),
-            ElevatedButton(
+          const SizedBox(height: 32.0),
+          ElevatedButton(
             onPressed: _isNameValid
                 ? () async {
                     final name = _nameController.text.trim();
                     final presenter = _presenterController.text.trim().isEmpty
                         ? null
                         : _presenterController.text.trim();
-          
+
                     // Close sheet first
                     if (mounted) {
                       Navigator.pop(context);
                     }
-                    
+
                     // Then create talk and navigate
                     await widget.onCreateTalk(name, presenter);
                   }
                 : null,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12.0),
-              child: Text('Create talk'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.accentColor,
+              foregroundColor: AppTheme.primaryColor,
+              disabledBackgroundColor: AppTheme.accentColor.withAlpha(128),
+              disabledForegroundColor: AppTheme.primaryColor.withAlpha(128),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28.0),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
+            ),
+            child: const Text(
+              'Create talk',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 16.0,
+              ),
             ),
           ),
           const SizedBox(height: 16.0),

@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'dart:io';
+import '../theme/app_theme.dart';
+import '../utils/page_transitions.dart';
 
 class AnnotationScreen extends StatefulWidget {
   final String imagePath;
@@ -42,6 +44,7 @@ class AnnotationScreenState extends State<AnnotationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -52,7 +55,11 @@ class AnnotationScreenState extends State<AnnotationScreen> {
         ),
         title: Text(
           widget.talkTitle,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ),
       body: Column(
@@ -64,33 +71,63 @@ class AnnotationScreenState extends State<AnnotationScreen> {
             ),
           ),
           Container(
-            color: Theme.of(context).colorScheme.surface,
-            padding: const EdgeInsets.all(16.0),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(24.0),
+              ),
+            ),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   'Annotate it',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 24.0),
                 TextField(
                   controller: _annotationController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Why is it interesting? (optional)',
-                    border: OutlineInputBorder(),
+                    labelStyle: const TextStyle(color: Colors.black54),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey.shade500),
+                    ),
+                    contentPadding: const EdgeInsets.all(16),
                   ),
-                  maxLines: 3,
+                  style: const TextStyle(color: Colors.black87),
+                  maxLines: 5,
                 ),
-                const SizedBox(height: 16.0),
+                const SizedBox(height: 24.0),
                 Row(
                   children: [
                     Expanded(
                       child: TextButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Retake photo'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.black54,
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: const Text(
+                          'Delete photo',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 16.0),
@@ -106,7 +143,22 @@ class AnnotationScreenState extends State<AnnotationScreen> {
                             },
                           );
                         },
-                        child: const Text('Save photo'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.accentColor,
+                          foregroundColor: AppTheme.primaryColor,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                        ),
+                        child: const Text(
+                          'Save photo',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],

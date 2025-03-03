@@ -1,11 +1,21 @@
 // ignore_for_file: use_super_parameters
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
 import 'services/storage_service.dart';
 import 'services/date_format_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set system UI overlay style for status bar
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
   
   // Initialize services
   final storageService = StorageService();
@@ -29,14 +39,9 @@ class ConferencePhotosApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Talk to me',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.teal,
-          brightness: Brightness.dark,
-        ),
-      ),
+      theme: AppTheme.darkTheme, // Use our custom theme
       home: HomeScreen(storageService: storageService),
+      debugShowCheckedModeBanner: false, // Remove debug banner
     );
   }
 }

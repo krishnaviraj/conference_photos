@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class EditAnnotationSheet extends StatefulWidget {
   final String initialAnnotation;
@@ -45,7 +46,13 @@ class _EditAnnotationSheetState extends State<EditAnnotationSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
         left: 16.0,
         right: 16.0,
-        top: 16.0,
+        top: 24.0,
+      ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24.0),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -53,34 +60,53 @@ class _EditAnnotationSheetState extends State<EditAnnotationSheet> {
         children: [
           Text(
             'Edit annotation',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24.0),
           TextField(
             controller: _annotationController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Why is it interesting?',
-              border: OutlineInputBorder(),
+              labelStyle: const TextStyle(color: Colors.black54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(color: Colors.grey.shade500),
+              ),
+              contentPadding: const EdgeInsets.all(16),
             ),
-            maxLines: 3,
-            textCapitalization: TextCapitalization.sentences,
+            style: const TextStyle(color: Colors.black87),
+            maxLines: 5,
             autofocus: true,
           ),
           const SizedBox(height: 24.0),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black54,
+                ),
+                child: const Text(
                   'Cancel',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                    fontSize: 16,
                   ),
                 ),
               ),
-              const SizedBox(width: 8.0),
               ElevatedButton(
                 onPressed: _isValid
                     ? () {
@@ -88,7 +114,25 @@ class _EditAnnotationSheetState extends State<EditAnnotationSheet> {
                         Navigator.pop(context, newAnnotation);
                       }
                     : null,
-                child: const Text('Save'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.accentColor,
+                  foregroundColor: AppTheme.primaryColor,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 12.0,
+                  ),
+                ),
+                child: const Text(
+                  'Save',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
