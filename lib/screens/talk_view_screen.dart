@@ -20,6 +20,8 @@ import '../widgets/photo_list_item.dart';
 import '../widgets/talk_menu.dart';
 import '../widgets/custom_fab.dart';
 import '../utils/page_transitions.dart';
+import '../widgets/edit_talk_sheet.dart';
+
 
 class TalkViewScreen extends StatefulWidget {
   final Talk talk;
@@ -47,6 +49,7 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
   final Map<String, Photo> _pendingDeletions = {}; // Track photos by their IDs
   final Set<String> _selectedPhotos = {};
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  late Talk _currentTalk;
 
   final CameraService _cameraService = CameraService();
 
@@ -59,6 +62,7 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
   @override
   void initState() {
     super.initState();
+    _currentTalk = widget.talk; // Initialize with the talk passed from widget
     _loadPhotos();
   }
 
@@ -70,133 +74,108 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
   }
 
   void _launchCamera() async {
-    if (!mounted) return;
+  if (!mounted) return;
 
-    try {
-      final imagePath = await _cameraService.captureImage();
-      if (!mounted || imagePath == null) return;
+  try {
+    final imagePath = await _cameraService.captureImage();
+    if (!mounted || imagePath == null) return;
 
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
 
-      final result = await Navigator.push<Map<String, String>>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AnnotationScreen(
-            imagePath: imagePath,
-            talkTitle: widget.talk.name,
-          ),
-        ),
-      );
-
-      if (!mounted) return;
-      Navigator.pop(context); // Remove loading indicator
-
-      if (result != null) {
-        final savedPath = await _cameraService.saveImageToTalkDirectory(
-          widget.talk.id,
-          File(imagePath),
-        );
-
-        final photo = Photo(
-          id: DateTime.now().toString(),
-          path: savedPath,
-          annotation: result['annotation']!,
-          createdAt: DateTime.now(),
-        );
-
-        setState(() {
-          photos.add(photo);
-        });
-
-        await widget.storageService.savePhotos(widget.talk.id, photos);
-        await widget.storageService.saveTalks(
-          widget.allTalks.map((t) {
-            if (t.id == widget.talk.id) {
-              return t.updatePhotoCount(photos.length);
-            }
-            return t;
-          }).toList(),
-        );
-
-        await _cameraService.deleteImage(imagePath);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to capture image')),
-      );
-    }
-  }
-
-  void _handlePhotoTap(String photoId) {
-    if (_selectedPhotos.isNotEmpty) {
-      setState(() {
-        if (_selectedPhotos.contains(photoId)) {
-          _selectedPhotos.remove(photoId);
-        } else {
-          _selectedPhotos.add(photoId);
-        }
-      });
-      return;
-    }
-
-    final photo = photos.firstWhere((p) => p.id == photoId);
-    Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => PhotoViewScreen(
-    //       photo: photo,
-    //       talkId: widget.talk.id,
-    //       storageService: widget.storageService,
-    //       talkName: widget.talk.name,
-    //       presenterName: widget.talk.presenter,
-    //       onPhotoDeleted: () {
-    //         setState(() {
-    //           photos.removeWhere((p) => p.id == photoId);
-    //         });
-    //       },
-    //       onAnnotationUpdated: (newAnnotation) {
-    //         setState(() {
-    //           final index = photos.indexWhere((p) => p.id == photoId);
-    //           if (index != -1) {
-    //             photos[index] = photos[index].copyWith(annotation: newAnnotation);
-    //           }
-    //         });
-    //       },
-    //     ),
-    //   ),
-    // );
-     context,
-      SlideUpPageRoute(
-        page: PhotoViewScreen(
-          photo: photo,
-          talkId: widget.talk.id,
-          storageService: widget.storageService,
-          talkName: widget.talk.name,
-          presenterName: widget.talk.presenter,
-          onPhotoDeleted: () {
-            setState(() {
-              photos.removeWhere((p) => p.id == photoId);
-            });
-          },
-          onAnnotationUpdated: (newAnnotation) {
-            setState(() {
-              final index = photos.indexWhere((p) => p.id == photoId);
-              if (index != -1) {
-                photos[index] = photos[index].copyWith(annotation: newAnnotation);
-              }
-            });
-          },
+    final result = await Navigator.push<Map<String, String>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AnnotationScreen(
+          imagePath: imagePath,
+          talkTitle: _currentTalk.name, // Use _currentTalk instead of widget.talk
         ),
       ),
     );
+
+    if (!mounted) return;
+    Navigator.pop(context); // Remove loading indicator
+
+    if (result != null) {
+      final savedPath = await _cameraService.saveImageToTalkDirectory(
+        _currentTalk.id, // Use _currentTalk instead of widget.talk
+        File(imagePath),
+      );
+
+      final photo = Photo(
+        id: DateTime.now().toString(),
+        path: savedPath,
+        annotation: result['annotation']!,
+        createdAt: DateTime.now(),
+      );
+
+      setState(() {
+        photos.add(photo);
+      });
+
+      await widget.storageService.savePhotos(_currentTalk.id, photos); // Use _currentTalk
+      await widget.storageService.saveTalks(
+        widget.allTalks.map((t) {
+          if (t.id == _currentTalk.id) { // Use _currentTalk
+            return t.updatePhotoCount(photos.length);
+          }
+          return t;
+        }).toList(),
+      );
+
+      await _cameraService.deleteImage(imagePath);
+    }
+  } catch (e) {
+    // Error handling
   }
+}
+
+   void _handlePhotoTap(String photoId) {
+  if (_selectedPhotos.isNotEmpty) {
+    setState(() {
+      if (_selectedPhotos.contains(photoId)) {
+        _selectedPhotos.remove(photoId);
+      } else {
+        _selectedPhotos.add(photoId);
+      }
+    });
+    return;
+  }
+
+  final photo = photos.firstWhere((p) => p.id == photoId);
+  
+  Navigator.push(
+    context,
+    SlideUpPageRoute(
+      page: PhotoViewScreen(
+        photo: photo,
+        talkId: _currentTalk.id,
+        storageService: widget.storageService,
+        talkName: _currentTalk.name,
+        presenterName: _currentTalk.presenter,
+        onPhotoDeleted: () {
+          setState(() {
+            photos.removeWhere((p) => p.id == photoId);
+          });
+        },
+        onAnnotationUpdated: (newAnnotation) {
+          setState(() {
+            final index = photos.indexWhere((p) => p.id == photoId);
+            if (index != -1) {
+              photos[index] = photos[index].copyWith(annotation: newAnnotation);
+            }
+          });
+        },
+      ),
+    ),
+  );
+}
 
   void _handlePhotoLongPress(String photoId) {
     if (_isReorderingMode) return;
@@ -398,6 +377,49 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
     );
   }
 
+  void _showEditTalkSheet() {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (bottomSheetContext) => EditTalkSheet(
+      talk: _currentTalk,
+      onUpdateTalk: (name, presenter) async {
+        // Create updated talk
+        final updatedTalk = _currentTalk.copyWith(
+          name: name,
+          presenter: presenter,
+        );
+
+        // Update in storage
+        final updatedTalks = widget.allTalks.map((talk) {
+          if (talk.id == _currentTalk.id) {
+            return updatedTalk;
+          }
+          return talk;
+        }).toList();
+        
+        await widget.storageService.saveTalks(updatedTalks);
+        
+        // Update local state immediately
+        if (mounted) {
+          setState(() {
+            _currentTalk = updatedTalk;
+          });
+          
+          // Show confirmation
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Talk updated successfully'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -424,7 +446,7 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                     child: Column(
                       children: [
                         Text(
-                          widget.talk.name,
+                          _currentTalk.name,
                           style: const TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w500,
@@ -435,9 +457,9 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                           mainAxisAlignment: MainAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (widget.talk.presenter != null) ...[
+                            if (_currentTalk.presenter != null) ...[
                               Text(
-                                widget.talk.presenter!,
+                                _currentTalk.presenter!,
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.white.withAlpha(179),
@@ -452,7 +474,7 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                               ),
                             ],
                             Text(
-                              DateFormatService.formatDate(widget.talk.createdAt),
+                              DateFormatService.formatDate(_currentTalk.createdAt),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white.withAlpha(179),
@@ -473,8 +495,19 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'delete') _handleDeleteTalk();
+                        if (value == 'edit') _showEditTalkSheet();
                       },
                       itemBuilder: (context) => [
+                        const PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Row(
+                              children: [
+                                Icon(Icons.edit_outlined),
+                                SizedBox(width: 8),
+                                Text('Edit talk details'),
+                              ],
+                            ),
+                          ),
                         const PopupMenuItem<String>(
                           value: 'delete',
                           child: Row(
@@ -513,10 +546,11 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                         onPressed: _clearSelection,
                       ),
                       actions: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: _editSelectedPhoto,
-                        ),
+                         if (_selectedPhotos.length == 1)
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: _editSelectedPhoto,
+                          ),
                         IconButton(
                           icon: const Icon(Icons.delete),
                           onPressed: _deleteSelectedPhotos,
@@ -526,10 +560,11 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
           drawer: _isReorderingMode
               ? null
               : TalkMenu(
-                  currentTalk: widget.talk,
+                  currentTalk: _currentTalk,
                   allTalks: widget.allTalks,
                   onTalkSelected: widget.onTalkSelected,
                   onNewTalk: widget.onNewTalk,
+                  storageService: widget.storageService,
                 ),
           body: GestureDetector(
             onTap: () {

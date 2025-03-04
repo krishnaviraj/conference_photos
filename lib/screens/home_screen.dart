@@ -13,6 +13,10 @@ import '../mixins/undo_operation_mixin.dart';
 import '../theme/app_theme.dart';
 import '../widgets/custom_fab.dart';
 import '../utils/page_transitions.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../screens/settings_screen.dart';
+import '../widgets/edit_talk_sheet.dart';
+
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -133,6 +137,46 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
     );
   }
 
+  void _showEditTalkSheet(Talk talk) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (bottomSheetContext) => EditTalkSheet(
+      talk: talk,
+      onUpdateTalk: (name, presenter) async {
+        // Update the talk
+        final updatedTalk = talk.copyWith(
+          name: name,
+          presenter: presenter,
+        );
+        
+        // Update local state
+        setState(() {
+          final index = talks.indexWhere((t) => t.id == talk.id);
+          if (index != -1) {
+            talks[index] = updatedTalk;
+          }
+          _selectedTalks.clear(); // Clear selection after editing
+        });
+        
+        // Update storage
+        await widget.storageService.saveTalks(talks);
+        
+        // Show confirmation
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Talk updated successfully'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+    ),
+  );
+}
+
   void _toggleSearch() {
     setState(() {
       _isSearching = !_isSearching;
@@ -186,55 +230,24 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 actions: [
-                  if (talks.isNotEmpty && !_isSearching)
-                    IconButton(
-                      icon: const Icon(Icons.search),
-                      onPressed: _toggleSearch,
-                    ),
-                  if (_isSearching)
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: _toggleSearch,
-                    ),
-                  if (!_isSearching && talks.isNotEmpty)
-                    PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert),
-                      onSelected: (value) async {
-                        if (value == 'clear_data') {
-                          // Show confirmation dialog
-                          final shouldClear = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Clear All Data'),
-                              content: const Text('This will delete all talks and photos. This cannot be undone.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Clear'),
-                                ),
-                              ],
+                   if (_isSearching)
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: _toggleSearch,
+                      ),
+                    if (!_isSearching)
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        tooltip: 'Settings',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SettingsScreen(storageService: widget.storageService),
                             ),
                           );
-
-                          if (shouldClear == true) {
-                            await widget.storageService.clearAllData();
-                            setState(() {
-                              talks = [];
-                            });
-                          }
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem<String>(
-                          value: 'clear_data',
-                          child: Text('Clear All Data'),
-                        ),
-                      ],
-                    ),
+                        },
+                      ),
                 ],
               )
             : ContextualAppBar(
@@ -245,6 +258,16 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                   onPressed: _clearSelection,
                 ),
                 actions: [
+                  // Only show edit when a single talk is selected
+                  if (_selectedTalks.length == 1)
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        final talkId = _selectedTalks.first;
+                        final talk = talks.firstWhere((t) => t.id == talkId);
+                        _showEditTalkSheet(talk);
+                      },
+                    ),
                   IconButton(
                     icon: const Icon(Icons.delete),
                     onPressed: _deleteSelectedTalks,
@@ -257,46 +280,21 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // App logo container (replace with actual logo)
-                    Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: AppTheme.accentColor,
-                        borderRadius: BorderRadius.circular(100),
+                     SvgPicture.asset(
+                        'assets/images/home_empty.svg',
+                        width: 100,
+                        height: 100,
+                        semanticsLabel: 'Empty home illustration',
                       ),
-                      child: Center(
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // App logo placeholder
-                            Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color: AppTheme.primaryColor,
-                                borderRadius: BorderRadius.circular(60),
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt_outlined,
-                                size: 60,
-                                color: AppTheme.accentColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    const Text(
-                      'Create a talk to get started',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    EmptyStateTile(onTap: _showCreateTalkSheet),
+            const SizedBox(height: 24),
+            const Text(
+              'Create a talk to get started',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
                   ],
                 ),
               )

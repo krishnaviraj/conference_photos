@@ -17,6 +17,7 @@ class PhotoViewScreen extends StatefulWidget {
   final Function(String)? onAnnotationUpdated;
   final String talkName;
   final String? presenterName;
+  final Function(String, String?)? onTalkDetailsUpdated;
 
   const PhotoViewScreen({
     super.key,
@@ -27,6 +28,7 @@ class PhotoViewScreen extends StatefulWidget {
     this.presenterName,
     this.onPhotoDeleted,
     this.onAnnotationUpdated,
+    this.onTalkDetailsUpdated,
   });
 
   @override
@@ -35,11 +37,15 @@ class PhotoViewScreen extends StatefulWidget {
 
 class PhotoViewScreenState extends State<PhotoViewScreen> {
   late String _currentAnnotation;
+  late String _currentTalkName;
+  String? _currentPresenterName;
 
   @override
   void initState() {
     super.initState();
     _currentAnnotation = widget.photo.annotation;
+    _currentTalkName = widget.talkName;
+    _currentPresenterName = widget.presenterName;
   }
 
   Future<void> _editAnnotation() async {
@@ -93,6 +99,13 @@ class PhotoViewScreenState extends State<PhotoViewScreen> {
     }
   }
 
+   void updateTalkDetails(String name, String? presenter) {
+  setState(() {
+    _currentTalkName = name;
+    _currentPresenterName = presenter;
+  });
+}
+
   void _deletePhoto() {
     showDialog(
       context: context,
@@ -129,7 +142,7 @@ class PhotoViewScreenState extends State<PhotoViewScreen> {
           title: Column(
             children: [
               Text(
-                widget.talkName,
+                _currentTalkName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -141,9 +154,9 @@ class PhotoViewScreenState extends State<PhotoViewScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (widget.presenterName != null) ...[
+                  if (_currentPresenterName != null) ...[
                     Text(
-                      widget.presenterName!,
+                      _currentPresenterName!,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withAlpha(179),

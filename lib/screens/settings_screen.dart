@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/date_format_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/confirmation_dialog.dart';
+import '../services/storage_service.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  final StorageService? storageService;
+  
+  const SettingsScreen({Key? key, this.storageService}) : super(key: key);
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -11,6 +15,20 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   String _selectedDateFormat = DateFormatService.getCurrentFormat();
+  late StorageService _storageService;
+
+  @override
+  void initState() {
+    super.initState();
+    _storageService = widget.storageService ?? StorageService();
+    if (widget.storageService == null) {
+      _initializeStorageService();
+    }
+  }
+
+  Future<void> _initializeStorageService() async {
+    await _storageService.initialize();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +56,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: ListView(
           children: [
             const SizedBox(height: 16),
+            
+            // Date Format Option
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -68,7 +88,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _showDateFormatOptions,
               ),
             ),
-            // You can add more settings options here
+            
+            // Divider for visual separation
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Divider(
+                color: Colors.white.withAlpha(50),
+                height: 1,
+              ),
+            ),
+            
+            // Section Title for danger zone
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Text(
+                'Danger Zone',
+                style: TextStyle(
+                  color: Colors.red[300],
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            
+            // Clear All Data Option
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: ListTile(
+                leading: const Icon(
+                  Icons.delete_forever,
+                  color: Colors.red,
+                ),
+                title: const Text(
+                  'Clear all data',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                subtitle: Text(
+                  'This will delete all talks and photos',
+                  style: TextStyle(
+                    color: Colors.red[100],
+                    fontSize: 14,
+                  ),
+                ),
+                onTap: _showClearDataConfirmation,
+              ),
+            ),
           ],
         ),
       ),
@@ -145,6 +221,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showClearDataConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => ConfirmationDialog(
+        title: 'Clear All Data',
+        message: 'This will delete all talks and photos. This cannot be undone.',
+        confirmLabel: 'Clear All Data',
+        cancelLabel: 'Cancel',
+        onConfirm: () async {
+          // Show loading indicator
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (BuildContext context) => const Center(
+              child: CircularProgressIndicator(),
+            ),
+          );
+
+          try {
+            await _storageService.clearAllData();
+            
+            if (!mounted) return;
+            
+            // Close loading dialog
+            Navigator.pop(context);
+            
+            // Show success message
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('All data has been cleared'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          } catch (e) {
+            if (!mounted) return;
+            
+            // Close loading dialog
+            Navigator.pop(context);
+            
+            // Show error message
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to clear data: ${e.toString()}'),
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        },
       ),
     );
   }

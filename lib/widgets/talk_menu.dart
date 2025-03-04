@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import '../models/talk.dart';
 import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
+import '../services/storage_service.dart';
 
 class TalkMenu extends StatelessWidget {
   final Talk currentTalk;
   final List<Talk> allTalks;
   final Function(Talk) onTalkSelected;
   final VoidCallback onNewTalk;
+  final StorageService storageService;
 
   const TalkMenu({
     super.key,
@@ -17,6 +19,7 @@ class TalkMenu extends StatelessWidget {
     required this.allTalks,
     required this.onTalkSelected,
     required this.onNewTalk,
+    required this.storageService,
   });
 
   @override
@@ -121,12 +124,12 @@ class TalkMenu extends StatelessWidget {
               ),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
-                  ),
-                );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SettingsScreen(storageService: storageService),
+                    ),
+                  );
               },
             ),
             const SizedBox(height: 16),

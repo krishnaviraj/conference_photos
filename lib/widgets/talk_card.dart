@@ -1,4 +1,4 @@
-// ignore_for_file: use_super_parameters
+// Update talk_card.dart file to include speaker name and reposition photo count
 
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
@@ -107,6 +107,7 @@ class TalkCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Talk name
                   Text(
                     talk.name,
                     style: const TextStyle(
@@ -115,9 +116,26 @@ class TalkCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
+                  
+                  // Add speaker name if available
+                  if (talk.presenter != null && talk.presenter!.isNotEmpty) ...[
+                    const SizedBox(height: 6.0),
+                    Text(
+                      talk.presenter!,
+                      style: TextStyle(
+                        color: Colors.white.withAlpha(230),
+                        fontSize: 16,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                  
                   const SizedBox(height: 12.0),
+                  
+                  // Date and photo count both on the left
                   Row(
                     children: [
+                      // Date
                       Text(
                         DateFormatService.formatDate(talk.createdAt),
                         style: TextStyle(
@@ -125,7 +143,17 @@ class TalkCard extends StatelessWidget {
                           fontSize: 14,
                         ),
                       ),
-                      const Spacer(),
+                      
+                      // Add separator between date and photo count
+                      Text(
+                        " • ",
+                        style: TextStyle(
+                          color: Colors.white.withAlpha(179),
+                          fontSize: 14,
+                        ),
+                      ),
+                      
+                      // Photo count (moved from right to left)
                       Text(
                         '${talk.photoCount} photos',
                         style: TextStyle(
@@ -145,7 +173,7 @@ class TalkCard extends StatelessWidget {
   }
 }
 
-// Custom painter for diagonal lines pattern
+// The custom painters remain unchanged
 class DiagonalLinesPainter extends CustomPainter {
   final Color baseColor;
   
@@ -171,7 +199,6 @@ class DiagonalLinesPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Custom painter for circles pattern
 class CirclesPainter extends CustomPainter {
   final Color baseColor;
   
@@ -193,7 +220,6 @@ class CirclesPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// Custom painter for wavy lines pattern
 class WavyLinesPainter extends CustomPainter {
   final Color baseColor;
   
