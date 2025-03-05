@@ -423,12 +423,21 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_isReorderingMode,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
-          _cancelReordering();
-        }
-      },
+      canPop: !_isReorderingMode && _selectedPhotos.isEmpty,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            // If in reordering mode, cancel reordering
+            if (_isReorderingMode) {
+              _cancelReordering();
+            } 
+            // If items are selected, clear selection
+            else if (_selectedPhotos.isNotEmpty) {
+              setState(() {
+                _selectedPhotos.clear();
+              });
+            }
+          }
+        },
       child: Container(
         decoration: const BoxDecoration(
           gradient: AppTheme.primaryGradient,

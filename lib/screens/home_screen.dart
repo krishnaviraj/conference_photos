@@ -186,9 +186,36 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
+  void _handleTalkTap(Talk talk) {
+  // If already in selection mode, toggle selection instead of navigating
+  if (_selectedTalks.isNotEmpty) {
+    setState(() {
+      if (_selectedTalks.contains(talk.id)) {
+        _selectedTalks.remove(talk.id);
+      } else {
+        _selectedTalks.add(talk.id);
+      }
+    });
+  } else {
+    // Normal navigation when not in selection mode
+    _navigateToTalkView(talk);
+  }
+}
+
+@override
+Widget build(BuildContext context) {
+  return PopScope(
+    // Only allow pop if no items are selected
+    canPop: _selectedTalks.isEmpty,
+    onPopInvokedWithResult: (didPop, result) {
+      if (!didPop) {
+        // If talks are selected, clear selection instead of exiting
+        setState(() {
+          _selectedTalks.clear();
+        });
+      }
+    },
+    child: Container(
       decoration: const BoxDecoration(
         gradient: AppTheme.primaryGradient,
       ),
@@ -286,21 +313,20 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                         height: 100,
                         semanticsLabel: 'Empty home illustration',
                       ),
-            const SizedBox(height: 24),
-            const Text(
-              'Create a talk to get started',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Create a talk to get started',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               )
             : Column(
                 children: [
-
                   Expanded(
                     child: ListView.builder(
                       padding: const EdgeInsets.only(top: 8, bottom: 80),
@@ -343,7 +369,7 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                           ),
                           child: TalkCard(
                             talk: talk,
-                            onTap: () => _navigateToTalkView(talk),
+                            onTap: () => _handleTalkTap(talk),
                             onLongPress: () => _handleTalkLongPress(talk.id),
                             isSelected: _selectedTalks.contains(talk.id),
                           ),
@@ -353,7 +379,7 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
                   ),
                 ],
               ),
-                floatingActionButton: Hero(
+        floatingActionButton: Hero(
           tag: 'camera-fab',
           child: FlowerShapedFab(
             onPressed: _showCreateTalkSheet,
@@ -361,6 +387,7 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
