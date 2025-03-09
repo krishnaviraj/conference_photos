@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import '../services/google_drive_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/confirmation_dialog.dart';
+import '../services/storage_service.dart';
+import '../services/app_state_manager.dart';
+import '../widgets/backup_progress_dialog.dart';
 
 class BackupManagementScreen extends StatefulWidget {
   final GoogleDriveService googleDriveService;
+  final StorageService storageService;
 
   const BackupManagementScreen({
     super.key,
     required this.googleDriveService,
+    required this.storageService,
   });
 
   @override
@@ -149,6 +154,7 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
       barrierDismissible: false,
       builder: (context) => BackupProgressDialog(
         googleDriveService: widget.googleDriveService,
+        storageService: widget.storageService, // Add this line
         isRestore: true,
         backupId: backupId,
       ),
@@ -258,6 +264,7 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
                               barrierDismissible: false,
                               builder: (context) => BackupProgressDialog(
                                 googleDriveService: widget.googleDriveService,
+                                storageService: widget.storageService, // Add this line
                                 isRestore: false,
                               ),
                             );
@@ -398,128 +405,4 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
       ),
     );
   }
-}
-
-// Dialog to show backup/restore progress
-class BackupProgressDialog extends StatefulWidget {
-  final GoogleDriveService googleDriveService;
-  final bool isRestore;
-  final String? backupId;
-
-  const BackupProgressDialog({
-    Key? key,
-    required this.googleDriveService,
-    required this.isRestore,
-    this.backupId,
-  }) : super(key: key);
-
-  @override
-  State<BackupProgressDialog> createState() => _BackupProgressDialogState();
-}
-
-class _BackupProgressDialogState extends State<BackupProgressDialog> {
-  String _status = 'Initializing...';
-  double _progress = 0.0;
-  bool _isDone = false;
-  bool _isError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startOperation();
-  }
-
-  Future<void> _startOperation() async {
-  bool success = false;
-  try {
-    if (widget.isRestore) {
-      success = await widget.googleDriveService.restoreFromBackup(
-        backupId: widget.backupId,
-        onStatusUpdate: (status) {
-          if (mounted) {
-            setState(() {
-              _status = status;
-            });
-          }
-        },
-        onProgressUpdate: (progress) {
-          if (mounted) {
-            setState(() {
-              _progress = progress;
-            });
-          }
-        },
-      );
-    } else {
-      success = await widget.googleDriveService.createBackup(
-        onStatusUpdate: (status) {
-          if (mounted) {
-            setState(() {
-              _status = status;
-            });
-          }
-        },
-        onProgressUpdate: (progress) {
-          if (mounted) {
-            setState(() {
-              _progress = progress;
-            });
-          }
-        },
-      );
-    }
-  } catch (e) {
-    debugPrint('Operation error: $e');
-    success = false;
-  }
-  
-  if (!mounted) return;
-  
-  setState(() {
-    _isDone = true;
-    _isError = !success;
-  });
-}
-
-  @override
-Widget build(BuildContext context) {
-  return AlertDialog(
-    title: Text(
-      widget.isRestore ? 'Restoring from backup' : 'Creating backup',
-    ),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(_status),
-        const SizedBox(height: 16),
-        LinearProgressIndicator(
-          value: _progress,
-          backgroundColor: Colors.grey[300],
-          valueColor: AlwaysStoppedAnimation<Color>(
-            _isError ? Colors.red : AppTheme.accentColor,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text('${(_progress * 100).toInt()}%'),
-        if (_isError) ...[
-          const SizedBox(height: 16),
-          Text(
-            'An error occurred during the operation',
-            style: TextStyle(color: Colors.red),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ],
-    ),
-    actions: [
-      if (_isDone)
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pop(!_isError);
-          },
-          child: Text(_isError ? 'Close' : 'Done'),
-        ),
-    ],
-  );
-}
 }

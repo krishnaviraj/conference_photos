@@ -6,6 +6,20 @@ import '../services/storage_service.dart';
 import '../services/google_drive_service.dart';
 import 'backup_management_screen.dart';
 import '../screens/home_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:conference_photos/main.dart' show ConferencePhotosApp;
+import '../services/app_state_manager.dart';
+import '../widgets/backup_progress_dialog.dart';
+import 'dart:async';
+
+void restartApp(BuildContext context, StorageService storageService) {
+  final app = ConferencePhotosApp(storageService: storageService);
+  
+  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+    MaterialPageRoute(builder: (context) => app),
+    (route) => false,
+  );
+}
 
 class SettingsScreen extends StatefulWidget {
   final StorageService? storageService;
@@ -111,13 +125,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     // Show backup progress dialog
     final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => BackupProgressDialog(
-        googleDriveService: _googleDriveService,
-        isRestore: false,
-      ),
-    );
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => BackupProgressDialog(
+      googleDriveService: _googleDriveService,
+      storageService: _storageService, 
+      isRestore: false,
+    ),
+  );
     
     if (result == true) {
       // Backup successful
@@ -139,27 +154,45 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
 // Add this new method to handle the app restart
 void _forceAppRestart() {
-  // Pop back to the first route (home screen)
-  Navigator.of(context).popUntil((route) => route.isFirst);
-  
-  // Get the ScaffoldMessenger to show a "Restarting..." message
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(
-      content: Text('Restarting app...'),
-      duration: Duration(seconds: 1),
+  // Show a loading indicator
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) => const Center(
+      child: CircularProgressIndicator(),
     ),
   );
   
-  // Small delay to allow navigation to complete
-  Future.delayed(const Duration(milliseconds: 300), () {
-    // Use the context from the root Navigator to completely replace the HomeScreen
+  // First, exit all screens to get back to home
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  
+  // Small delay to allow state to settle
+  Future.delayed(const Duration(milliseconds: 500), () async {
+    // Explicitly reload data in storage service
+    await _storageService.initialize();
+    
+    if (!mounted) return;
+    
+    // Dismiss loading indicator
+    Navigator.of(context).pop();
+    
+    // Get the root navigator
     final navigatorState = Navigator.of(context, rootNavigator: true);
     
-    navigatorState.pushReplacement(
+    // Close all screens and start fresh with a brand new HomeScreen
+    navigatorState.pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => HomeScreen(
           storageService: _storageService,
         ),
+      ),
+      (route) => false, // Remove all existing routes
+    );
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('App restarted with restored data'),
+        duration: Duration(seconds: 3),
       ),
     );
   });
@@ -171,6 +204,7 @@ void _forceAppRestart() {
     MaterialPageRoute(
       builder: (context) => BackupManagementScreen(
         googleDriveService: _googleDriveService,
+        storageService: _storageService,
       ),
     ),
   ).then((success) {
@@ -421,7 +455,7 @@ void _forceAppRestart() {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.backup),
-                            label: const Text('Back Up Now'),
+                            label: const Text('Back up now'),
                             onPressed: _isLoading ? null : _startBackup,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.accentColor,
@@ -644,108 +678,6 @@ void _forceAppRestart() {
           }
         },
       ),
-    );
-  }
-}
-
-// Dialog to show backup/restore progress
-class BackupProgressDialog extends StatefulWidget {
-  final GoogleDriveService googleDriveService;
-  final bool isRestore;
-  final String? backupId;
-
-  const BackupProgressDialog({
-    Key? key,
-    required this.googleDriveService,
-    required this.isRestore,
-    this.backupId,
-  }) : super(key: key);
-
-  @override
-  State<BackupProgressDialog> createState() => _BackupProgressDialogState();
-}
-
-class _BackupProgressDialogState extends State<BackupProgressDialog> {
-  String _status = 'Initializing...';
-  double _progress = 0.0;
-  bool _isDone = false;
-  bool _isError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _startOperation();
-  }
-
-  Future<void> _startOperation() async {
-    bool success;
-    
-    if (widget.isRestore) {
-      success = await widget.googleDriveService.restoreFromBackup(
-        backupId: widget.backupId,
-        onStatusUpdate: (status) {
-          setState(() {
-            _status = status;
-          });
-        },
-        onProgressUpdate: (progress) {
-          setState(() {
-            _progress = progress;
-          });
-        },
-      );
-    } else {
-      success = await widget.googleDriveService.createBackup(
-        onStatusUpdate: (status) {
-          setState(() {
-            _status = status;
-          });
-        },
-        onProgressUpdate: (progress) {
-          setState(() {
-            _progress = progress;
-          });
-        },
-      );
-    }
-    
-    setState(() {
-      _isDone = true;
-      _isError = !success;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.isRestore ? 'Restoring from Backup' : 'Creating Backup',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(_status),
-          const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _isError ? Colors.red : AppTheme.accentColor,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('${(_progress * 100).toInt()}%'),
-        ],
-      ),
-      actions: [
-        if (_isDone)
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(!_isError);
-            },
-            child: Text(_isError ? 'Close' : 'Done'),
-          ),
-      ],
     );
   }
 }

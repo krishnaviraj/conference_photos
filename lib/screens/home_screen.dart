@@ -16,6 +16,7 @@ import '../utils/page_transitions.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../screens/settings_screen.dart';
 import '../widgets/edit_talk_sheet.dart';
+import '../services/app_state_manager.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -38,17 +39,52 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
   bool _isSearching = false;
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
+  
+  // Check if we need to do a deep reload
+  if (AppStateManager().needsDataReload) {
+    debugPrint('HomeScreen detected pending reload flag');
+    widget.storageService.hardReset().then((_) {
+      _loadTalks();
+      AppStateManager().clearReloadFlag();
+      debugPrint('HomeScreen completed deep reload');
+    });
+  } else {
+    // Normal loading
     _loadTalks();
   }
+  
+  // Still keep the post-frame callback
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    _loadTalks();
+  });
+}
 
   Future<void> _loadTalks() async {
+  try {
+    debugPrint('Loading talks from storage...');
     final loadedTalks = await widget.storageService.loadTalks();
-    setState(() {
-      talks = loadedTalks;
-    });
+    debugPrint('Loaded ${loadedTalks.length} talks from storage');
+    
+    if (mounted) {
+      setState(() {
+        talks = loadedTalks;
+      });
+    }
+  } catch (e) {
+    debugPrint('Error loading talks: $e');
+    // Show an error message if something goes wrong
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading data: ${e.toString()}'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
+}
 
   void _showCreateTalkSheet() {
     showModalBottomSheet(

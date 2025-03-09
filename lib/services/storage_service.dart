@@ -12,8 +12,18 @@ class StorageService {
   late SharedPreferences _prefs;
   
   Future<void> initialize() async {
-    _prefs = await SharedPreferences.getInstance();
+  debugPrint('Initializing StorageService');
+  _prefs = await SharedPreferences.getInstance();
+  debugPrint('SharedPreferences initialized');
+  
+  // Verify preferences are working by reading a test value
+  try {
+    final testValue = _prefs.getString(_talksKey);
+    debugPrint('Test read from preferences: ${testValue != null ? 'Success' : 'No data yet'}');
+  } catch (e) {
+    debugPrint('Error reading from SharedPreferences: $e');
   }
+}
 
   // Convert Talk to/from JSON
   Map<String, dynamic> _talkToJson(Talk talk) {
@@ -69,14 +79,24 @@ class StorageService {
 
   // Load talks
   Future<List<Talk>> loadTalks() async {
-    final talksString = _prefs.getString(_talksKey);
-    if (talksString == null) return [];
+  final talksString = _prefs.getString(_talksKey);
+  debugPrint('Loading talks from preferences: ${talksString != null ? 'Found data' : 'No data'}');
+  
+  if (talksString == null) return [];
 
+  try {
     final talksJson = jsonDecode(talksString) as List;
-    return talksJson
+    final loadedTalks = talksJson
         .map((talkJson) => _talkFromJson(talkJson as Map<String, dynamic>))
         .toList();
+    
+    debugPrint('Successfully loaded ${loadedTalks.length} talks');
+    return loadedTalks;
+  } catch (e) {
+    debugPrint('Error parsing talks data: $e');
+    return [];
   }
+}
 
   // Save photos for a talk
   Future<void> savePhotos(String talkId, List<Photo> photos) async {
@@ -196,6 +216,13 @@ Future<List<Photo>> updatePhotoAnnotation(String talkId, String photoId, String 
       }
     }
   }
+
+  Future<void> hardReset() async {
+  debugPrint('Performing hard reset of StorageService');
+  _prefs = await SharedPreferences.getInstance();
+  await _prefs.reload();
+  debugPrint('StorageService hard reset completed');
+}
 
   Future<void> clearAllData() async {
   // Clear SharedPreferences
