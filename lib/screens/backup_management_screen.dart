@@ -27,22 +27,52 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
   }
 
   Future<void> _loadBackups() async {
-    setState(() {
-      _isLoading = true;
-    });
+  setState(() {
+    _isLoading = true;
+  });
 
+  // Try to get current account, sign in if needed
+  final account = await widget.googleDriveService.getCurrentAccount();
+  if (account == null) {
+    // Try to sign in
+    await widget.googleDriveService.signIn();
+  }
+
+  try {
     final backups = await widget.googleDriveService.getBackupsList();
     
-    setState(() {
-      _backups = backups;
-      _isLoading = false;
+    if (mounted) {
+      setState(() {
+        _backups = backups;
+        _isLoading = false;
+        
+        // Auto-select the most recent backup if any exist
+        if (backups.isNotEmpty) {
+          _selectedBackupId = backups.first.id;
+        }
+      });
+    }
+  } catch (e) {
+    debugPrint('Error loading backups: $e');
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
       
-      // Auto-select the most recent backup if any exist
-      if (backups.isNotEmpty) {
-        _selectedBackupId = backups.first.id;
-      }
-    });
+      // Show error and retry option
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Failed to load backups'),
+          action: SnackBarAction(
+            label: 'Retry',
+            onPressed: _loadBackups,
+          ),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
+}
 
   Future<void> _deleteBackup(String backupId) async {
     final confirmed = await showDialog<bool>(
@@ -92,21 +122,29 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
   }
 
   Future<void> _restoreFromBackup(String backupId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => ConfirmationDialog(
-        title: 'Restore from Backup',
-        message: 'This will replace all current data with the backed-up data. Continue?',
-        confirmLabel: 'Restore',
-        cancelLabel: 'Cancel',
-        onConfirm: () => Navigator.of(context).pop(true),
-      ),
-    );
-    
-    if (confirmed != true) return;
-    
-    // Show restore progress dialog
-    final result = await showDialog<bool>(
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => ConfirmationDialog(
+      title: 'Restore from backup',
+      message: 'This will replace all current data with the backed-up data. Continue?',
+      confirmLabel: 'Restore',
+      cancelLabel: 'Cancel',
+      onConfirm: () => Navigator.of(context).pop(true),
+    ),
+  );
+  
+  if (confirmed != true) return;
+  
+  if (!mounted) return; // Add this check
+  
+  setState(() {
+    _isLoading = true;
+  });
+  
+  // Show restore progress dialog
+  bool? result;
+  try {
+    result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => BackupProgressDialog(
@@ -115,19 +153,39 @@ class _BackupManagementScreenState extends State<BackupManagementScreen> {
         backupId: backupId,
       ),
     );
-    
-    if (result == true && mounted) {
-      // Restore successful, navigate back to settings
-      Navigator.of(context).pop();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Restore completed successfully'),
-          duration: Duration(seconds: 3),
-        ),
-      );
-    }
+  } catch (e) {
+    debugPrint('Error in restore dialog: $e');
   }
+  
+  // Check mounted again after async operation
+  if (!mounted) return;
+  
+  setState(() {
+    _isLoading = false;
+  });
+  
+  if (result == true && mounted) {
+  // Success - reload the backup list to reflect changes
+  try {
+    await _loadBackups();
+  } catch (e) {
+    debugPrint('Error reloading backups: $e');
+  }
+  
+  if (!mounted) return; // Check mounted again
+  
+  // Just return success without showing a snackbar - let the settings screen handle it
+  Navigator.of(context).pop(true); // Return true to indicate success
+} else if (mounted) {
+    // Show error message if restore failed
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Restore failed. Please try again.'),
+        duration: Duration(seconds: 3),
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -372,74 +430,96 @@ class _BackupProgressDialogState extends State<BackupProgressDialog> {
   }
 
   Future<void> _startOperation() async {
-    bool success;
-    
+  bool success = false;
+  try {
     if (widget.isRestore) {
       success = await widget.googleDriveService.restoreFromBackup(
         backupId: widget.backupId,
         onStatusUpdate: (status) {
-          setState(() {
-            _status = status;
-          });
+          if (mounted) {
+            setState(() {
+              _status = status;
+            });
+          }
         },
         onProgressUpdate: (progress) {
-          setState(() {
-            _progress = progress;
-          });
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
         },
       );
     } else {
       success = await widget.googleDriveService.createBackup(
         onStatusUpdate: (status) {
-          setState(() {
-            _status = status;
-          });
+          if (mounted) {
+            setState(() {
+              _status = status;
+            });
+          }
         },
         onProgressUpdate: (progress) {
-          setState(() {
-            _progress = progress;
-          });
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
         },
       );
     }
-    
-    setState(() {
-      _isDone = true;
-      _isError = !success;
-    });
+  } catch (e) {
+    debugPrint('Operation error: $e');
+    success = false;
   }
+  
+  if (!mounted) return;
+  
+  setState(() {
+    _isDone = true;
+    _isError = !success;
+  });
+}
 
   @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.isRestore ? 'Restoring from backup' : 'Creating backup',
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(_status),
+Widget build(BuildContext context) {
+  return AlertDialog(
+    title: Text(
+      widget.isRestore ? 'Restoring from backup' : 'Creating backup',
+    ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(_status),
+        const SizedBox(height: 16),
+        LinearProgressIndicator(
+          value: _progress,
+          backgroundColor: Colors.grey[300],
+          valueColor: AlwaysStoppedAnimation<Color>(
+            _isError ? Colors.red : AppTheme.accentColor,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text('${(_progress * 100).toInt()}%'),
+        if (_isError) ...[
           const SizedBox(height: 16),
-          LinearProgressIndicator(
-            value: _progress,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              _isError ? Colors.red : AppTheme.accentColor,
-            ),
+          Text(
+            'An error occurred during the operation',
+            style: TextStyle(color: Colors.red),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          Text('${(_progress * 100).toInt()}%'),
         ],
-      ),
-      actions: [
-        if (_isDone)
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(!_isError);
-            },
-            child: Text(_isError ? 'Close' : 'Done'),
-          ),
       ],
-    );
-  }
+    ),
+    actions: [
+      if (_isDone)
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop(!_isError);
+          },
+          child: Text(_isError ? 'Close' : 'Done'),
+        ),
+    ],
+  );
+}
 }

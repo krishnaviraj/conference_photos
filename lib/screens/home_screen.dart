@@ -202,6 +202,19 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
   }
 }
 
+void forceReloadData() async {
+  setState(() {
+    talks = []; // Clear current data
+  });
+  await _loadTalks(); // Reload from storage
+}
+
+// Static method to access this from anywhere
+static void reloadHomeScreen(BuildContext context) {
+  final homeScreenState = context.findAncestorStateOfType<HomeScreenState>();
+  homeScreenState?.forceReloadData();
+}
+
 @override
 Widget build(BuildContext context) {
   return PopScope(

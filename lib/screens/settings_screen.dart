@@ -5,6 +5,7 @@ import '../widgets/confirmation_dialog.dart';
 import '../services/storage_service.dart';
 import '../services/google_drive_service.dart';
 import 'backup_management_screen.dart';
+import '../screens/home_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final StorageService? storageService;
@@ -42,31 +43,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _checkSignInStatus() async {
+  setState(() {
+    _isCheckingSignIn = true;
+  });
+  
+  final isSignedIn = await _googleDriveService.isSignedIn();
+  
+  if (isSignedIn) {
+    final account = await _googleDriveService.getCurrentAccount();
     setState(() {
-      _isCheckingSignIn = true;
+      _isSignedIn = true;
+      _userEmail = account?.email;
     });
     
-    final isSignedIn = await _googleDriveService.isSignedIn();
-    
-    if (isSignedIn) {
-      final account = await _googleDriveService.getCurrentAccount();
-      setState(() {
-        _isSignedIn = true;
-        _userEmail = account?.email;
-      });
-    }
-    
+    // Always reload backup metadata when signed in
+    _loadLastBackupTime();
+  } else {
     setState(() {
-      _isCheckingSignIn = false;
+      _isSignedIn = false;
+      _userEmail = null;
     });
   }
+  
+  setState(() {
+    _isCheckingSignIn = false;
+  });
+}
 
   Future<void> _loadLastBackupTime() async {
+  try {
     final lastBackup = await _googleDriveService.getLastBackupTime();
     setState(() {
       _lastBackupTime = lastBackup;
     });
+    debugPrint('Last backup time loaded: $_lastBackupTime');
+  } catch (e) {
+    debugPrint('Error loading last backup time: $e');
   }
+}
 
   Future<void> _signIn() async {
     setState(() {
@@ -123,62 +137,85 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-  Future<void> _startRestore() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => ConfirmationDialog(
-        title: 'Restore from Backup',
-        message: 'This will replace all current data with the backed-up data. Continue?',
-        confirmLabel: 'Restore',
-        cancelLabel: 'Cancel',
-        onConfirm: () => Navigator.of(context).pop(true),
+// Add this new method to handle the app restart
+void _forceAppRestart() {
+  // Pop back to the first route (home screen)
+  Navigator.of(context).popUntil((route) => route.isFirst);
+  
+  // Get the ScaffoldMessenger to show a "Restarting..." message
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Restarting app...'),
+      duration: Duration(seconds: 1),
+    ),
+  );
+  
+  // Small delay to allow navigation to complete
+  Future.delayed(const Duration(milliseconds: 300), () {
+    // Use the context from the root Navigator to completely replace the HomeScreen
+    final navigatorState = Navigator.of(context, rootNavigator: true);
+    
+    navigatorState.pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => HomeScreen(
+          storageService: _storageService,
+        ),
       ),
     );
-    
-    if (confirmed != true) return;
-    
-    setState(() {
-      _isLoading = true;
-    });
-    
-    // Show restore progress dialog
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => BackupProgressDialog(
+  });
+}
+
+  void _navigateToBackupManagement() {
+  Navigator.push<bool>(
+    context,
+    MaterialPageRoute(
+      builder: (context) => BackupManagementScreen(
         googleDriveService: _googleDriveService,
-        isRestore: true,
       ),
-    );
+    ),
+  ).then((success) {
+    // Refresh last backup time after returning
+    _loadLastBackupTime();
     
-    if (result == true) {
-      // Restore successful
+    // If returning from a successful restore, suggest app restart
+    if (success == true) {
+      // Show a SnackBar message immediately
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Restore completed successfully'),
-          duration: Duration(seconds: 3),
+          content: Text('Restore completed successfully. Restart the app to see all restored content.'),
+          duration: Duration(seconds: 5),
+        ),
+      );
+      
+      // Then show restart dialog
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Restart recommended'),
+          content: const Text(
+            'To ensure all restored data is properly loaded, it\'s recommended to restart the app now.'
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Later'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Close the dialog
+                Navigator.of(dialogContext).pop();
+                
+                // Use a more forceful approach to restart
+                _forceAppRestart();
+              },
+              child: const Text('Restart now'),
+            ),
+          ],
         ),
       );
     }
-    
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  void _navigateToBackupManagement() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BackupManagementScreen(
-          googleDriveService: _googleDriveService,
-        ),
-      ),
-    ).then((_) {
-      // Refresh last backup time after returning
-      _loadLastBackupTime();
-    });
-  }
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -355,14 +392,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        _lastBackupTime != null
-                            ? 'On ${DateFormatService.formatDateTime(_lastBackupTime!)}'
-                            : 'No backups yet',
-                        style: TextStyle(
-                          color: Colors.white.withAlpha(179),
-                          fontSize: 14,
+                          _lastBackupTime != null
+                              ? 'On ${DateFormatService.formatDateTime(_lastBackupTime!.toLocal())}'
+                              : 'No backups yet',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(179),
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
                       trailing: IconButton(
                         icon: const Icon(
                           Icons.folder_open,
@@ -378,15 +415,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 if (_isSignedIn)
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
+                        SizedBox(
+                          width: double.infinity,
                           child: ElevatedButton.icon(
-                             icon: Icon(
-                                Icons.backup,
-                                color: AppTheme.primaryColor,
-                              ),
-                            label: const Text('Back up now'),
+                            icon: const Icon(Icons.backup),
+                            label: const Text('Back Up Now'),
                             onPressed: _isLoading ? null : _startBackup,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppTheme.accentColor,
@@ -398,21 +433,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.restore),
-                            label: const Text('Restore'),
-                            onPressed: _isLoading ? null : _startRestore,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'To restore from a backup, tap the folder icon above to manage your backups',
+                          style: TextStyle(
+                            color: Colors.white.withAlpha(179),
+                            fontSize: 12,
                           ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
