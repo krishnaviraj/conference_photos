@@ -224,6 +224,19 @@ Future<List<Photo>> updatePhotoAnnotation(String talkId, String photoId, String 
   debugPrint('StorageService hard reset completed');
 }
 
+Future<bool> isDeepReloadRequired() async {
+  final prefs = await SharedPreferences.getInstance();
+  final needsReload = prefs.getBool('_force_complete_reload_') ?? false;
+  
+  if (needsReload) {
+    // Clear the flag immediately
+    await prefs.setBool('_force_complete_reload_', false);
+    debugPrint('Deep reload required flag detected and cleared');
+  }
+  
+  return needsReload;
+}
+
   Future<void> clearAllData() async {
   // Clear SharedPreferences
   await _prefs.clear();

@@ -2,41 +2,98 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../theme/app_theme.dart';
 
-class FlowerShapedFab extends StatelessWidget {
+class FlowerShapedFab extends StatefulWidget {
   final VoidCallback onPressed;
   final IconData icon;
   final double size;
+  final bool animate; 
   
   const FlowerShapedFab({
     Key? key,
     required this.onPressed,
     required this.icon,
     this.size = 72.0,
+    this.animate = false, // Default to no animation
   }) : super(key: key);
   
   @override
+  State<FlowerShapedFab> createState() => _FlowerShapedFabState();
+}
+
+class _FlowerShapedFabState extends State<FlowerShapedFab> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 12), // Slow rotation over 12 seconds
+      vsync: this,
+    );
+    
+    _animation = Tween<double>(
+      begin: 0.0,
+      end: 2 * math.pi, // Full rotation (2π)
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.linear,
+    ));
+    
+    // Start animation if animate is true
+    if (widget.animate) {
+      _controller.repeat(); // Continuously rotate
+    }
+  }
+  
+  @override
+  void didUpdateWidget(FlowerShapedFab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Handle changes to the animate property
+    if (widget.animate && !_controller.isAnimating) {
+      _controller.repeat();
+    } else if (!widget.animate && _controller.isAnimating) {
+      _controller.stop();
+    }
+  }
+  
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        splashColor: Colors.white.withAlpha(50),
-        highlightColor: Colors.white.withAlpha(30),
-        child: Container(
-          width: size,
-          height: size,
-          child: CustomPaint(
-            painter: FlowerButtonPainter(AppTheme.accentColor),
-            child: Center(
-              child: Icon(
-                icon,
-                color: AppTheme.primaryColor,
-                size: size * 0.45,
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Transform.rotate(
+          angle: widget.animate ? _animation.value : 0.0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onPressed,
+              splashColor: Colors.white.withAlpha(50),
+              highlightColor: Colors.white.withAlpha(30),
+              child: SizedBox(
+                width: widget.size,
+                height: widget.size,
+                child: CustomPaint(
+                  painter: FlowerButtonPainter(AppTheme.accentColor),
+                  child: Center(
+                    child: Icon(
+                      widget.icon,
+                      color: AppTheme.primaryColor,
+                      size: widget.size * 0.45,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

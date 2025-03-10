@@ -61,6 +61,14 @@ void initState() {
   });
 }
 
+@override
+void didChangeDependencies() {
+  super.didChangeDependencies();
+  debugPrint("HomeScreen didChangeDependencies called - checking for data");
+  // This will ensure data loads whenever the screen becomes visible again
+  _loadTalks();
+}
+
   Future<void> _loadTalks() async {
   try {
     debugPrint('Loading talks from storage...');
@@ -321,7 +329,13 @@ Widget build(BuildContext context) {
                             MaterialPageRoute(
                               builder: (context) => SettingsScreen(storageService: widget.storageService),
                             ),
-                          );
+                          ).then((_) {
+                            // Reload talks when returning from Settings - same pattern as TalkViewScreen
+                            if (mounted) {
+                              debugPrint('Returning from settings screen, reloading talks');
+                              _loadTalks();
+                            }
+                          });
                         },
                       ),
                 ],
@@ -433,6 +447,7 @@ Widget build(BuildContext context) {
           child: FlowerShapedFab(
             onPressed: _showCreateTalkSheet,
             icon: Icons.add,
+            animate: talks.isEmpty, // Animate when no talks exist
           ),
         ),
       ),

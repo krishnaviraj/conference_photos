@@ -631,22 +631,28 @@ Future<bool> createBackup({
 
   // Get the last backup time
   Future<DateTime?> getLastBackupTime() async {
-  // Make sure prefs is initialized
-  if (_prefs == null) {
-    await _initPrefs();
-  }
-  
-  final timestamp = _prefs.getString(_lastBackupTimeKey);
-  debugPrint('Last backup timestamp from prefs: $timestamp');
-  
-  if (timestamp == null) {
-    return null;
-  }
-  
   try {
+    // Make sure prefs is initialized, use a safer approach
+    if (!_prefs.containsKey(_lastBackupTimeKey)) {
+      // Either not initialized or just doesn't have the key
+      try {
+        await _initPrefs();
+      } catch (e) {
+        debugPrint('Error initializing prefs: $e');
+        // Continue execution - we'll return null if there's still an issue
+      }
+    }
+    
+    final timestamp = _prefs.getString(_lastBackupTimeKey);
+    debugPrint('Last backup timestamp from prefs: $timestamp');
+    
+    if (timestamp == null) {
+      return null;
+    }
+    
     return DateTime.parse(timestamp);
   } catch (e) {
-    debugPrint('Error parsing timestamp: $e');
+    debugPrint('Error getting last backup time: $e');
     return null;
   }
 }

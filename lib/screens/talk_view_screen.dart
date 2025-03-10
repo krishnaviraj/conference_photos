@@ -686,38 +686,15 @@ class TalkViewScreenState extends State<TalkViewScreen> with UndoOperationMixin 
                       ),
           ),
           floatingActionButton: _isReorderingMode
-              // ? null
-              // : Container(
-              //     width: 72,
-              //     height: 72,
-              //     decoration: BoxDecoration(
-              //       shape: BoxShape.circle,
-              //       color: AppTheme.accentColor,
-              //       boxShadow: [
-              //         BoxShadow(
-              //           color: Colors.black.withAlpha(51),
-              //           blurRadius: 8,
-              //           offset: const Offset(0, 3),
-              //         ),
-              //       ],
-              //     ),
-              //     child: IconButton(
-              //       onPressed: _launchCamera,
-              //       icon: const Icon(
-              //         Icons.camera_alt,
-              //         color: AppTheme.primaryColor,
-              //         size: 32,
-              //       ),
-              //     ),
-              //   ),
-              ? null
-              : Hero(
-                  tag: 'camera-fab',
-                  child: FlowerShapedFab(
-                    onPressed: _launchCamera,
-                    icon: Icons.camera_alt,
-                  ),
+            ? null
+            : Hero(
+                tag: 'camera-fab',
+                child: FlowerShapedFab(
+                  onPressed: _launchCamera,
+                  icon: Icons.camera_alt,
+                  animate: photos.isEmpty, // Animate when no photos exist
                 ),
+              ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ),
       ),

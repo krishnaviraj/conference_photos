@@ -3,6 +3,7 @@ import '../services/google_drive_service.dart';
 import '../services/storage_service.dart';
 import '../services/app_state_manager.dart';
 import '../theme/app_theme.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 /// A dialog that shows progress during backup and restore operations.
 /// 
 /// This dialog works with GoogleDriveService to show real-time progress
@@ -43,63 +44,70 @@ class _BackupProgressDialogState extends State<BackupProgressDialog> {
   }
 
   Future<void> _startOperation() async {
-    bool success = false;
-    try {
-      if (widget.isRestore) {
-        success = await widget.googleDriveService.restoreFromBackup(
-          backupId: widget.backupId,
-          onStatusUpdate: (status) {
-            if (mounted) {
-              setState(() {
-                _status = status;
-              });
-            }
-          },
-          onProgressUpdate: (progress) {
-            if (mounted) {
-              setState(() {
-                _progress = progress;
-              });
-            }
-          },
-        );
+  bool success = false;
+  try {
+    if (widget.isRestore) {
+      success = await widget.googleDriveService.restoreFromBackup(
+        backupId: widget.backupId,
+        onStatusUpdate: (status) {
+          if (mounted) {
+            setState(() {
+              _status = status;
+            });
+          }
+        },
+        onProgressUpdate: (progress) {
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
+        },
+      );
+      
+      // If restoration was successful, explicitly reinitialize storage
+      if (success) {
+        // Keep these existing lines
+        await widget.storageService.hardReset();
+        AppStateManager().markForReload();
         
-        // If restoration was successful, explicitly reinitialize storage
-        if (success) {
-          await widget.storageService.hardReset();
-          AppStateManager().markForReload();
-          debugPrint('Restoration complete - app marked for reload');
-        }
-      } else {
-        success = await widget.googleDriveService.createBackup(
-          onStatusUpdate: (status) {
-            if (mounted) {
-              setState(() {
-                _status = status;
-              });
-            }
-          },
-          onProgressUpdate: (progress) {
-            if (mounted) {
-              setState(() {
-                _progress = progress;
-              });
-            }
-          },
-        );
+        // Add this new code to set the deep reload flag
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('_force_complete_reload_', true);
+        
+        debugPrint('Restoration complete - deep reload flag set in SharedPreferences');
       }
-    } catch (e) {
-      debugPrint('Operation error: $e');
-      success = false;
+    } else {
+      // Backup code remains unchanged
+      success = await widget.googleDriveService.createBackup(
+        onStatusUpdate: (status) {
+          if (mounted) {
+            setState(() {
+              _status = status;
+            });
+          }
+        },
+        onProgressUpdate: (progress) {
+          if (mounted) {
+            setState(() {
+              _progress = progress;
+            });
+          }
+        },
+      );
     }
-    
-    if (!mounted) return;
-    
-    setState(() {
-      _isDone = true;
-      _isError = !success;
-    });
+  } catch (e) {
+    debugPrint('Operation error: $e');
+    success = false;
   }
+  
+  if (!mounted) return;
+  
+  setState(() {
+    _isDone = true;
+    _isError = !success;
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +132,7 @@ class _BackupProgressDialogState extends State<BackupProgressDialog> {
           if (_isDone && !_isError && widget.isRestore) ...[
             const SizedBox(height: 16),
             const Text(
-              'Restart required to see restored data',
+              'If the restored data doesn\'t appear, try restarting the app',
               style: TextStyle(fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),

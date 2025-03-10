@@ -7,19 +7,10 @@ import '../services/google_drive_service.dart';
 import 'backup_management_screen.dart';
 import '../screens/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:conference_photos/main.dart' show ConferencePhotosApp;
 import '../services/app_state_manager.dart';
 import '../widgets/backup_progress_dialog.dart';
 import 'dart:async';
-
-void restartApp(BuildContext context, StorageService storageService) {
-  final app = ConferencePhotosApp(storageService: storageService);
-  
-  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-    MaterialPageRoute(builder: (context) => app),
-    (route) => false,
-  );
-}
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   final StorageService? storageService;
@@ -152,53 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     });
   }
 
-// Add this new method to handle the app restart
-void _forceAppRestart() {
-  // Show a loading indicator
-  showDialog(
-    context: context,
-    barrierDismissible: false,
-    builder: (BuildContext context) => const Center(
-      child: CircularProgressIndicator(),
-    ),
-  );
-  
-  // First, exit all screens to get back to home
-  Navigator.of(context).popUntil((route) => route.isFirst);
-  
-  // Small delay to allow state to settle
-  Future.delayed(const Duration(milliseconds: 500), () async {
-    // Explicitly reload data in storage service
-    await _storageService.initialize();
-    
-    if (!mounted) return;
-    
-    // Dismiss loading indicator
-    Navigator.of(context).pop();
-    
-    // Get the root navigator
-    final navigatorState = Navigator.of(context, rootNavigator: true);
-    
-    // Close all screens and start fresh with a brand new HomeScreen
-    navigatorState.pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => HomeScreen(
-          storageService: _storageService,
-        ),
-      ),
-      (route) => false, // Remove all existing routes
-    );
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('App restarted with restored data'),
-        duration: Duration(seconds: 3),
-      ),
-    );
-  });
-}
-
-  void _navigateToBackupManagement() {
+void _navigateToBackupManagement() {
   Navigator.push<bool>(
     context,
     MaterialPageRoute(
@@ -208,45 +153,20 @@ void _forceAppRestart() {
       ),
     ),
   ).then((success) {
-    // Refresh last backup time after returning
+    // Refresh last backup time
     _loadLastBackupTime();
     
-    // If returning from a successful restore, suggest app restart
+    // If returning from a successful restore, show a message
     if (success == true) {
-      // Show a SnackBar message immediately
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Restore completed successfully. Restart the app to see all restored content.'),
-          duration: Duration(seconds: 5),
+          content: Text('Restore completed successfully'),
+          duration: Duration(seconds: 3),
         ),
       );
       
-      // Then show restart dialog
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('Restart recommended'),
-          content: const Text(
-            'To ensure all restored data is properly loaded, it\'s recommended to restart the app now.'
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Later'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                // Close the dialog
-                Navigator.of(dialogContext).pop();
-                
-                // Use a more forceful approach to restart
-                _forceAppRestart();
-              },
-              child: const Text('Restart now'),
-            ),
-          ],
-        ),
-      );
+      // The navigate-back-to-home will automatically trigger data reload
+      // through the .then() callback we added to the settings navigation
     }
   });
 }
@@ -271,7 +191,11 @@ void _forceAppRestart() {
           ),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              // Pop with a result to signal that we're returning from settings
+              Navigator.pop(context, true);
+              // This explicit signal can be used by anything that pushed this screen
+            },
           ),
         ),
         body: Stack(
