@@ -18,7 +18,7 @@ class EmptyTalkView extends StatelessWidget {
             'assets/images/talk_empty.svg',
             width: 100,
             height: 100,
-            semanticsLabel: 'Empty talk illustration',
+            semanticsLabel: 'Empty group illustration',
           ),
           const SizedBox(height: 24), // Same consistent spacing as home screen
           Text(
@@ -30,7 +30,7 @@ class EmptyTalkView extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'Everything for this talk will fill in here',
+            'Everything for this group will fill in here',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withAlpha(179),
                 ),

@@ -48,7 +48,7 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Talk details',
+            'Group details',
             style: TextStyle(
               color: Colors.black87,
               fontSize: 24,
@@ -60,7 +60,7 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: 'Talk name',
+              labelText: 'Group name',
               labelStyle: const TextStyle(color: Colors.black54),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -83,7 +83,7 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
           TextField(
             controller: _presenterController,
             decoration: InputDecoration(
-              labelText: "Who's talking?",
+              labelText: "Other details (e.g. who's talking)",
               labelStyle: const TextStyle(color: Colors.black54),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -131,7 +131,7 @@ class CreateTalkSheetState extends State<CreateTalkSheet> {
               padding: const EdgeInsets.symmetric(vertical: 16.0),
             ),
             child: const Text(
-              'Create talk',
+              'Create group',
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 16.0,

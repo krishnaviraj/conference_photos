@@ -6,7 +6,7 @@ class FlowerShapedFab extends StatefulWidget {
   final VoidCallback onPressed;
   final IconData icon;
   final double size;
-  final bool animate; 
+  final bool animate; // New property to control animation
   
   const FlowerShapedFab({
     Key? key,
@@ -65,35 +65,41 @@ class _FlowerShapedFabState extends State<FlowerShapedFab> with SingleTickerProv
   
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Transform.rotate(
-          angle: widget.animate ? _animation.value : 0.0,
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: widget.onPressed,
-              splashColor: Colors.white.withAlpha(50),
-              highlightColor: Colors.white.withAlpha(30),
-              child: SizedBox(
-                width: widget.size,
-                height: widget.size,
-                child: CustomPaint(
-                  painter: FlowerButtonPainter(AppTheme.accentColor),
-                  child: Center(
-                    child: Icon(
-                      widget.icon,
-                      color: AppTheme.primaryColor,
-                      size: widget.size * 0.45,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: widget.onPressed,
+        splashColor: Colors.white.withAlpha(50),
+        highlightColor: Colors.white.withAlpha(30),
+        child: SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Rotating flower background
+              AnimatedBuilder(
+                animation: _animation,
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: widget.animate ? _animation.value : 0.0,
+                    child: CustomPaint(
+                      painter: FlowerButtonPainter(AppTheme.accentColor),
+                      size: Size(widget.size, widget.size),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-            ),
+              // Stationary icon
+              Icon(
+                widget.icon,
+                color: AppTheme.primaryColor,
+                size: widget.size * 0.45,
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

@@ -17,7 +17,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../screens/settings_screen.dart';
 import '../widgets/edit_talk_sheet.dart';
 import '../services/app_state_manager.dart';
-
+import '../widgets/shimmer_loading.dart';
+import '../widgets/new_item_animator.dart';
+import '../widgets/diagonal_animated_background.dart';
 
 class HomeScreen extends StatefulWidget {
   final StorageService storageService;
@@ -37,6 +39,9 @@ class HomeScreenState extends State<HomeScreen> with UndoOperationMixin {
   Set<String> _selectedTalks = {};
   final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
+  bool _isLoading = true;
+  String? _newItemId;
+
 
   @override
 void initState() {
@@ -71,6 +76,10 @@ void didChangeDependencies() {
 
   Future<void> _loadTalks() async {
   try {
+    setState(() {
+      _isLoading = true;
+    });
+    
     debugPrint('Loading talks from storage...');
     final loadedTalks = await widget.storageService.loadTalks();
     debugPrint('Loaded ${loadedTalks.length} talks from storage');
@@ -78,12 +87,17 @@ void didChangeDependencies() {
     if (mounted) {
       setState(() {
         talks = loadedTalks;
+        _isLoading = false;
       });
     }
   } catch (e) {
     debugPrint('Error loading talks: $e');
     // Show an error message if something goes wrong
     if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error loading data: ${e.toString()}'),
@@ -112,8 +126,18 @@ void didChangeDependencies() {
           // Update local state and storage
           setState(() {
             talks.add(talk);
+            _newItemId = talk.id; // Track the new item
           });
           await widget.storageService.saveTalks(talks);
+
+          // Clear the new item ID after a delay
+        Future.delayed(Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _newItemId = null;
+            });
+          }
+        });
 
           if (!mounted) return;
 
@@ -253,6 +277,55 @@ void forceReloadData() async {
   await _loadTalks(); // Reload from storage
 }
 
+Widget _buildLoadingShimmer() {
+  return ListView.builder(
+    itemCount: 4, // Show 4 placeholder items
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    itemBuilder: (context, index) {
+      return ShimmerLoading(
+        child: Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          elevation: 0,
+          color: const Color(0xFF2A3550),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.0),
+          ),
+          child: Container(
+            height: 140,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title placeholder
+                Container(
+                  height: 24,
+                  width: 180,
+                  color: Colors.white.withOpacity(0.1),
+                ),
+                const SizedBox(height: 12),
+                // Presenter name placeholder (optional)
+                if (index % 2 == 0) // Show for some cards
+                  Container(
+                    height: 18,
+                    width: 140,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                // Info row placeholder
+                Container(
+                  height: 16,
+                  width: 200,
+                  color: Colors.white.withOpacity(0.1),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 // Static method to access this from anywhere
 static void reloadHomeScreen(BuildContext context) {
   final homeScreenState = context.findAncestorStateOfType<HomeScreenState>();
@@ -272,10 +345,7 @@ Widget build(BuildContext context) {
         });
       }
     },
-    child: Container(
-      decoration: const BoxDecoration(
-        gradient: AppTheme.primaryGradient,
-      ),
+    child: DiagonalAnimatedBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: _selectedTalks.isEmpty
@@ -364,11 +434,13 @@ Widget build(BuildContext context) {
                   ),
                 ],
               ),
-        body: talks.isEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
+        body: _isLoading
+    ? _buildLoadingShimmer()
+    : talks.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                     // App logo container (replace with actual logo)
                      SvgPicture.asset(
                         'assets/images/home_empty.svg',
@@ -378,7 +450,7 @@ Widget build(BuildContext context) {
                       ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Create a talk to get started',
+                      'Create a group to get started',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 20,
@@ -430,11 +502,14 @@ Widget build(BuildContext context) {
                             padding: const EdgeInsets.symmetric(horizontal: 20),
                             child: const Icon(Icons.delete, color: Colors.white),
                           ),
-                          child: TalkCard(
-                            talk: talk,
-                            onTap: () => _handleTalkTap(talk),
-                            onLongPress: () => _handleTalkLongPress(talk.id),
-                            isSelected: _selectedTalks.contains(talk.id),
+                          child: NewItemAnimator(
+                            isNew: talk.id == _newItemId,
+                            child: TalkCard(
+                              talk: talk,
+                              onTap: () => _handleTalkTap(talk),
+                              onLongPress: () => _handleTalkLongPress(talk.id),
+                              isSelected: _selectedTalks.contains(talk.id),
+                            ),
                           ),
                         );
                       },

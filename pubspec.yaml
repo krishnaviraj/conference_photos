@@ -34,11 +34,12 @@ dependencies:
   path_provider: ^2.0.15
   path: ^1.8.0
   shared_preferences: ^2.2.0
+  permission_handler: ^11.4.0
   flutter_svg: ^2.0.7
-  google_sign_in: ^6.1.4
+  google_sign_in: ^6.3.0
   googleapis: ^13.2.0
   http: ^1.1.0
-  archive: ^4.0.4
+  archive: ^4.0.5
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -47,6 +48,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+dependency_overrides:
+  shared_preferences_android: 2.4.6  # Pin to this working version
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

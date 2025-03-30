@@ -171,6 +171,36 @@ void _navigateToBackupManagement() {
   });
 }
 
+Future<void> _resetOnboarding() async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => ConfirmationDialog(
+      title: 'Reset onboarding',
+      message: 'This will show the welcome screens next time you restart the app.',
+      confirmLabel: 'Reset',
+      cancelLabel: 'Cancel',
+      onConfirm: () {
+        Navigator.of(context).pop(true);
+      },
+    ),
+  );
+
+  if (confirmed != true) return;
+
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('onboarding_complete', false);
+  
+  if (!mounted) return;
+  
+  // Show confirmation
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text('Onboarding reset. Restart the app to see the welcome screens.'),
+      duration: Duration(seconds: 3),
+    ),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -404,28 +434,8 @@ void _navigateToBackupManagement() {
                     ),
                   ),
                 
-                // Divider before danger zone
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  child: Divider(
-                    color: Colors.white.withAlpha(50),
-                    height: 1,
-                  ),
-                ),
-                
-                // Danger Zone Title
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                  child: Text(
-                    'Danger zone',
-                    style: TextStyle(
-                      color: Colors.red[300],
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                
+               
+               
                 // Clear All Data Option
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -451,7 +461,7 @@ void _navigateToBackupManagement() {
                       ),
                     ),
                     subtitle: Text(
-                      'This will delete all talks and photos',
+                      'This will delete all groups and photos',
                       style: TextStyle(
                         color: Colors.red[100],
                         fontSize: 14,
@@ -460,7 +470,39 @@ void _navigateToBackupManagement() {
                     onTap: _showClearDataConfirmation,
                   ),
                 ),
-
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.orange.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    leading: const Icon(
+                      Icons.replay_circle_filled,
+                      color: Colors.orange,
+                    ),
+                    title: const Text(
+                      'Reset onboarding',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Show the welcome screens again',
+                      style: TextStyle(
+                        color: Colors.orange[100],
+                        fontSize: 14,
+                      ),
+                    ),
+                    onTap: _resetOnboarding,
+                  ),
+                ),
                 const SizedBox(height: 32),
               ],
             ),
@@ -557,9 +599,9 @@ void _navigateToBackupManagement() {
     showDialog(
       context: context,
       builder: (context) => ConfirmationDialog(
-        title: 'Clear All Data',
-        message: 'This will delete all talks and photos. This cannot be undone.',
-        confirmLabel: 'Clear All Data',
+        title: 'Clear all data',
+        message: 'This will delete all groups and photos. This cannot be undone.',
+        confirmLabel: 'Clear all data',
         cancelLabel: 'Cancel',
         onConfirm: () async {
           // Show loading indicator

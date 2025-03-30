@@ -31,7 +31,7 @@ class EmptyStateTile extends StatelessWidget {
               ),
               const SizedBox(width: 16.0),
               Text(
-                'Start a new talk',
+                'Start a new group',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.accentColor,
                   fontWeight: FontWeight.w500,

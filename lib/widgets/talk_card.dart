@@ -1,5 +1,3 @@
-// Update talk_card.dart file to include speaker name and reposition photo count
-
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../models/talk.dart';

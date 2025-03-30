@@ -55,7 +55,7 @@ class EditTalkSheetState extends State<EditTalkSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Edit talk details',
+            'Edit group details',
             style: TextStyle(
               color: Colors.black87,
               fontSize: 24,
@@ -67,7 +67,7 @@ class EditTalkSheetState extends State<EditTalkSheet> {
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: 'Talk name',
+              labelText: 'Group name',
               labelStyle: const TextStyle(color: Colors.black54),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -90,7 +90,7 @@ class EditTalkSheetState extends State<EditTalkSheet> {
           TextField(
             controller: _presenterController,
             decoration: InputDecoration(
-              labelText: "Who's talking?",
+              labelText: "Other details (e.g. who's talking)",
               labelStyle: const TextStyle(color: Colors.black54),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),

@@ -91,7 +91,7 @@ class TalkMenu extends StatelessWidget {
                       color: AppTheme.accentColor,
                     ),
                     title: const Text(
-                      'Start a new talk',
+                      'Start a new group',
                       style: TextStyle(
                         color: AppTheme.accentColor,
                         fontSize: 16,
