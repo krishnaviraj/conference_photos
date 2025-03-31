@@ -120,11 +120,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          actions: [
-            TextButton(
+       appBar: PreferredSize(
+  preferredSize: const Size.fromHeight(kToolbarHeight),
+  child: Padding(
+    padding: const EdgeInsets.only(top: 42.0, left: 16.0, right: 16.0),
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        // Centered logo with additional padding to push it down
+        Positioned.fill(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 6.0), // Small padding just for the logo
+              child: SvgPicture.asset(
+                'assets/logo/mosaic_logo.svg',
+                height: 48,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+        
+        // Skip button aligned to the right (unchanged)
+        Positioned(
+          right: 0,
+          top: 0,
+          bottom: 0,
+          child: Center(
+            child: TextButton(
               onPressed: _skipOnboarding,
               child: Text(
                 'Skip',
@@ -134,8 +157,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ),
-          ],
+          ),
         ),
+      ],
+    ),
+  ),
+),
         body: SafeArea(
           child: Column(
             children: [
@@ -163,11 +190,11 @@ Center(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const SizedBox(height: 20),
-          // Replace the static SVG with our animated widget
+          // Using our animated welcome widget here
           const AnimatedWelcomeWidget(),
           const SizedBox(height: 40),
           Text(
-            'Welcome to Talk to me',
+            'Welcome to Mosaic',
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w500,

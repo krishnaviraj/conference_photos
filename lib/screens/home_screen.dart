@@ -361,26 +361,13 @@ Widget build(BuildContext context) {
                         style: const TextStyle(color: Colors.white),
                         autofocus: true,
                       )
-                    : Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: Colors.teal,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Talk to me',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                    : Align(
+  alignment: Alignment.centerLeft,
+  child: SvgPicture.asset(
+    'assets/logo/mosaic_logo.svg', // Use icon-only version
+    height: 40,
+  ),
+),
                 backgroundColor: Colors.transparent,
                 elevation: 0,
                 actions: [

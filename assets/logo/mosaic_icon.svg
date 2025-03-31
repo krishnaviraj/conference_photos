@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <!-- Grid-based Mosaic Icon Only -->
+  <g transform="translate(20, 20)">
+    <!-- Main mosaic shape - 3x3 grid of elements with one highlighted -->
+    <rect x="0" y="0" width="40" height="40" rx="6" fill="#009688" />
+    <rect x="45" y="0" width="40" height="40" rx="6" fill="#009688" />
+    <rect x="90" y="0" width="40" height="40" rx="6" fill="#009688" />
+    
+    <rect x="0" y="45" width="40" height="40" rx="6" fill="#009688" />
+    <rect x="45" y="45" width="40" height="40" rx="6" fill="#F2D9BE" /> <!-- Highlighted central tile -->
+    <rect x="90" y="45" width="40" height="40" rx="6" fill="#009688" />
+    
+    <rect x="0" y="90" width="40" height="40" rx="6" fill="#009688" />
+    <rect x="45" y="90" width="40" height="40" rx="6" fill="#009688" />
+    <rect x="90" y="90" width="40" height="40" rx="6" fill="#009688" />
+  </g>
+</svg>

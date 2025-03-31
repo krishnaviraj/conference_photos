@@ -5,6 +5,7 @@ import '../models/talk.dart';
 import '../screens/settings_screen.dart';
 import '../theme/app_theme.dart';
 import '../services/storage_service.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TalkMenu extends StatelessWidget {
   final Talk currentTalk;
@@ -30,29 +31,14 @@ class TalkMenu extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Talk to me',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ],
-              ),
-            ),
+  padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
+  alignment: Alignment.center, // Ensure proper alignment
+  child: SvgPicture.asset(
+    'assets/logo/mosaic_logo.svg',
+    height: 40,
+    fit: BoxFit.contain,
+  ),
+),
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
