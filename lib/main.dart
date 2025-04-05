@@ -50,7 +50,7 @@ class ConferencePhotosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Talk to me',
+      title: 'Mosaic',
       theme: AppTheme.darkTheme, // Use our custom theme
       home: onboardingComplete
           ? HomeScreen(storageService: storageService)

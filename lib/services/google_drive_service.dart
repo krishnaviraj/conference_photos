@@ -228,7 +228,7 @@ Future<bool> createBackup({
     final fileMetadata = drive.File();
     fileMetadata.name = backupFileName;
     fileMetadata.parents = [folderId]; // Explicitly set the parents array
-    fileMetadata.description = 'Talk to me app backup from ${timestamp.toIso8601String()}';
+    fileMetadata.description = 'Mosaic app backup from ${timestamp.toIso8601String()}';
     fileMetadata.mimeType = 'application/zip';
 
     debugPrint('File metadata: name=${fileMetadata.name}, parents=${fileMetadata.parents}, mimeType=${fileMetadata.mimeType}');

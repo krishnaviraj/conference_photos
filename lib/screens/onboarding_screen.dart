@@ -20,7 +20,7 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends State<OnboardingScreen> with SingleTickerProviderStateMixin {
   final PageController _pageController = PageController();
   int _currentPage = 0;
   
@@ -29,6 +29,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   
   // Create a key for the animated cards
   final GlobalKey<AnimatedCardsSvgState> _cardsKey = GlobalKey<AnimatedCardsSvgState>();
+
 
   @override
   void initState() {
@@ -120,49 +121,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-       appBar: PreferredSize(
-  preferredSize: const Size.fromHeight(kToolbarHeight),
-  child: Padding(
-    padding: const EdgeInsets.only(top: 42.0, left: 16.0, right: 16.0),
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        // Centered logo with additional padding to push it down
-        Positioned.fill(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 6.0), // Small padding just for the logo
-              child: SvgPicture.asset(
-                'assets/logo/mosaic_logo.svg',
-                height: 48,
-                fit: BoxFit.contain,
-              ),
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Padding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).size.height * 0.04, 
+              left: 16.0, 
+              right: 16.0,
             ),
-          ),
-        ),
-        
-        // Skip button aligned to the right (unchanged)
-        Positioned(
-          right: 0,
-          top: 0,
-          bottom: 0,
-          child: Center(
-            child: TextButton(
-              onPressed: _skipOnboarding,
-              child: Text(
-                'Skip',
-                style: TextStyle(
-                  color: AppTheme.accentColor,
-                  fontSize: 16,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Centered logo with additional padding to push it down
+                Positioned.fill(
+                  child: Center(
+                    child: SvgPicture.asset(
+                      'assets/logo/mosaic_logo.svg',
+                      height: MediaQuery.of(context).size.width < 400 ? 36 : 48,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
                 ),
-              ),
+                
+                // Skip button aligned to the right (unchanged)
+                Positioned(
+                  right: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: TextButton(
+                      onPressed: _skipOnboarding,
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: AppTheme.accentColor,
+                          fontSize: MediaQuery.of(context).size.width < 400 ? 10 : 10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
-    ),
-  ),
-),
         body: SafeArea(
           child: Column(
             children: [
@@ -178,64 +180,78 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     if (page == 1 && _cardsKey.currentState != null) {
                       _cardsKey.currentState!.resetAndStartAnimations();
                     }
+
                   },
                   children: [
                     // Welcome page
-Center(
-  child: SingleChildScrollView(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40.0), // Increased from 20.0 to match second screen
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          // Using our animated welcome widget here
-          const AnimatedWelcomeWidget(),
-          const SizedBox(height: 40),
-          Text(
-            'Welcome to Mosaic',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Capture and organize photos with annotations. Perfect for talks, inspirations, or trips.',
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.white.withAlpha(220),
-                ),
-            textAlign: TextAlign.left,
-          ),
-          const SizedBox(height: 20),
-        ],
-      ),
-    ),
-  ),
-),      
-                    // Photos info page
                     Center(
                       child: SingleChildScrollView(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width < 400 ? 24.0 : 40.0,
+                          ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 20),
-                              // Using our animated cards widget here with the key
-                              AnimatedCardsSvg(
-                                key: _cardsKey,
-                                startAnimation: true,
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                              // Using our animated welcome widget here
+                              SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.2,
+                                child: const AnimatedWelcomeWidget(),
                               ),
-                              const SizedBox(height: 40),
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                              Text(
+                                'Welcome to Mosaic',
+                                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 24 : 28,
+                                    ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                'Capture and organize photos with annotations. Perfect for groups, inspirations, or trips.',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Colors.white.withAlpha(220),
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16,
+                                    ),
+                                textAlign: TextAlign.left,
+                              ),
+                              const SizedBox(height: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),      
+                    // Photos info page
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width < 400 ? 12.0 : 20.0,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
+                              // Using our animated cards widget here with the key
+                              SizedBox(
+                                height: MediaQuery.of(context).size.height * 0.18,
+                                child: AnimatedCardsSvg(
+                                  key: _cardsKey,
+                                  startAnimation: true,
+                                ),
+                              ),
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                               Text(
                                 'Your photos stay in the app',
                                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w500,
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 24 : 28,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -244,6 +260,7 @@ Center(
                                 'Photos you take are stored within the app and won\'t appear in your gallery to avoid cluttering it up. Use the backup feature for important content!',
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       color: Colors.white.withAlpha(220),
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16,
                                     ),
                                 textAlign: TextAlign.left,
                               ),
@@ -258,31 +275,35 @@ Center(
                     Center(
                       child: SingleChildScrollView(
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: MediaQuery.of(context).size.width < 400 ? 12.0 : 20.0,
+                          ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const SizedBox(height: 20),
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.02),
                               SvgPicture.asset(
                                 'assets/images/camera_permission.svg',
-                                width: 150,
-                                height: 150,
+                                width: MediaQuery.of(context).size.width < 400 ? 100 : 150,
+                                height: MediaQuery.of(context).size.width < 400 ? 100 : 150,
                               ),
-                              const SizedBox(height: 40),
+                              SizedBox(height: MediaQuery.of(context).size.height * 0.03),
                               Text(
                                 'Camera permission',
                                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.w500,
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 24 : 28,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 20),
                               Text(
-                                'We need camera access to capture photos for your talks.',
+                                'The app needs access to your camera to let you take photos.',
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       color: Colors.white.withAlpha(220),
+                                      fontSize: MediaQuery.of(context).size.width < 400 ? 14 : 16,
                                     ),
                                 textAlign: TextAlign.center,
                               ),
@@ -306,15 +327,15 @@ Center(
               
               // Navigation dots
               Padding(
-                padding: const EdgeInsets.only(bottom: 20.0),
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).size.height * 0.02),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
                     3,
                     (index) => Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                      width: 10,
-                      height: 10,
+                      margin: EdgeInsets.symmetric(horizontal: MediaQuery.of(context).size.width < 400 ? 4.0 : 5.0),
+                      width: MediaQuery.of(context).size.width < 400 ? 8 : 10,
+                      height: MediaQuery.of(context).size.width < 400 ? 8 : 10,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: _currentPage == index
@@ -328,10 +349,10 @@ Center(
               
               // Next button
               Padding(
-                padding: const EdgeInsets.only(
+                padding: EdgeInsets.only(
                   left: 20.0,
                   right: 20.0,
-                  bottom: 40.0,
+                  bottom: MediaQuery.of(context).size.height * 0.05,
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -340,15 +361,17 @@ Center(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.accentColor,
                       foregroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      padding: EdgeInsets.symmetric(
+                        vertical: MediaQuery.of(context).size.width < 400 ? 12.0 : 16.0,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
                     ),
                     child: Text(
                       _currentPage == 2 ? 'Get started' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: TextStyle(
+                        fontSize: MediaQuery.of(context).size.width < 400 ? 16 : 18,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -369,18 +392,20 @@ Center(
     required bool isGranted,
     required VoidCallback onRequest,
   }) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 400;
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      padding: EdgeInsets.all(isSmallScreen ? 12.0 : 16.0),
       decoration: BoxDecoration(
         color: AppTheme.cardColor,
         borderRadius: BorderRadius.circular(12.0),
       ),
       child: Row(
         children: [
+          // Replace the AnimatedBuilder with a simple Icon widget
           Icon(
             icon,
             color: Colors.white,
-            size: 28,
+            size: isSmallScreen ? 22 : 28,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -389,9 +414,9 @@ Center(
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: isSmallScreen ? 14 : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -399,7 +424,7 @@ Center(
                   description,
                   style: TextStyle(
                     color: Colors.white.withAlpha(179),
-                    fontSize: 14,
+                    fontSize: isSmallScreen ? 12 : 14,
                   ),
                 ),
               ],
@@ -407,10 +432,10 @@ Center(
           ),
           const SizedBox(width: 8),
           isGranted
-              ? const Icon(
+              ? Icon(
                   Icons.check_circle,
                   color: Colors.green,
-                  size: 28,
+                  size: isSmallScreen ? 22 : 28,
                 )
               : ElevatedButton(
                   onPressed: onRequest,
@@ -418,7 +443,7 @@ Center(
                     backgroundColor: AppTheme.accentColor,
                     foregroundColor: AppTheme.primaryColor,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
+                      borderRadius: BorderRadius.circular(isSmallScreen ? 16.0 : 20.0),
                     ),
                   ),
                   child: const Text('Grant'),

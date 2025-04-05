@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Colors
-  static const Color primaryColor = Color(0xFF1E2C4A); // Deep blue background
+  static const Color primaryColor = Color(0xFF1E2C4A); // Keep original blue as primary
+  static const Color tealColor = Color(0xFF009688); // Add teal as a new color
   static const Color accentColor = Color(0xFFF2D9BE); // Cream/beige accent color
   static const Color cardColor = Color(0xFF2A3A5A); // Slightly lighter blue for cards
   static const Color surfaceColor = Color(0xFF171F36); // Darker blue for surfaces
@@ -11,7 +12,14 @@ class AppTheme {
 
   // Gradients
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF1E2C4A), Color(0xFF0F1526)],
+    colors: [Color(0xFF1E2C4A), Color(0xFF0F1526)], // Keep original gradient
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+  
+  // Add a teal gradient if needed
+  static const LinearGradient tealGradient = LinearGradient(
+    colors: [Color(0xFF009688), Color(0xFF00796B)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
@@ -42,16 +50,17 @@ class AppTheme {
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Nunito', // Base font for the app
       colorScheme: const ColorScheme.dark(
         primary: accentColor,
-        onPrimary: primaryColor,
-        secondary: accentColor,
-        onSecondary: primaryColor,
+        onPrimary: primaryColor, // Keep as original blue
+        secondary: tealColor, // Use teal as secondary
+        onSecondary: Colors.white,
         surface: surfaceColor,
-        background: primaryColor,
+        background: primaryColor, // Keep blue background
         error: Colors.redAccent,
       ),
-      scaffoldBackgroundColor: primaryColor,
+      scaffoldBackgroundColor: primaryColor, // Keep blue background
       cardTheme: CardTheme(
         color: cardColor,
         shape: RoundedRectangleBorder(
@@ -61,13 +70,16 @@ class AppTheme {
         margin: const EdgeInsets.all(spacingMedium),
       ),
       textTheme: const TextTheme(
-        displayLarge: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.bold),
-        displayMedium: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.bold),
-        displaySmall: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.bold),
-        headlineLarge: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.bold),
-        headlineMedium: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.w600),
-        headlineSmall: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.w600),
+        // Montserrat for headlines and app title
+        displayLarge: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w800),
+        displayMedium: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w800),
+        displaySmall: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w800),
+        headlineLarge: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w800),
+        headlineMedium: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w600),
+        headlineSmall: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w600),
+        titleLarge: TextStyle(fontFamily: 'Montserrat', color: textPrimaryColor, fontWeight: FontWeight.w600),
+        
+        // Nunito for body text and smaller UI elements (inherits from base fontFamily)
         titleMedium: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.w500),
         titleSmall: TextStyle(color: textPrimaryColor, fontWeight: FontWeight.w500),
         bodyLarge: TextStyle(color: textPrimaryColor),
@@ -77,7 +89,7 @@ class AppTheme {
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: accentColor,
-          foregroundColor: primaryColor,
+          foregroundColor: primaryColor, // Keep as blue
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(borderRadiusLarge),
           ),
@@ -105,9 +117,10 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         titleTextStyle: const TextStyle(
+          fontFamily: 'Montserrat', // Use Montserrat for app bar titles
           color: textPrimaryColor,
           fontSize: 22,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
         ),
         iconTheme: const IconThemeData(color: textPrimaryColor),
       ),

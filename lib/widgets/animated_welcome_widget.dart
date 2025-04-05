@@ -25,14 +25,14 @@ class AnimatedWelcomeWidgetState extends State<AnimatedWelcomeWidget> with Ticke
     // Create controller for the animation
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 800),
     );
     
     // Create slide animation
     _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller, 
-        curve: Curves.easeInOut,
+        curve: Curves.easeOutBack,
       ),
     );
     
@@ -104,17 +104,18 @@ class AnimatedWelcomeWidgetState extends State<AnimatedWelcomeWidget> with Ticke
           final photoBottomRadius = lerpDouble(8.0, 0.0, _cornerAnimation.value)!;
           final noteTopRadius = lerpDouble(8.0, 0.0, _cornerAnimation.value)!;
           
+          final scale = MediaQuery.of(context).size.width < 400 ? 0.7 : 1.0;
           return SizedBox(
-            width: 170,
-            height: 200,
+            width: 170 * scale,
+            height: 200 * scale,
             child: Stack(
               alignment: Alignment.center,
               clipBehavior: Clip.none,
               children: [
                 // Background circle
                 Container(
-                  width: 150,
-                  height: 150,
+                  width: 150 * scale,
+                  height: 150 * scale,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: LinearGradient(
@@ -130,14 +131,22 @@ class AnimatedWelcomeWidgetState extends State<AnimatedWelcomeWidget> with Ticke
                 
                 // Photo section (starts at top, moves down)
                 Positioned(
-                  top: 25 + photoOffset,
-                  child: _buildPhotoSection(topCornerRadius: 8.0, bottomCornerRadius: photoBottomRadius),
+                  top: (25 + photoOffset) * scale,
+                  child: _buildPhotoSection(
+                    topCornerRadius: 8.0, 
+                    bottomCornerRadius: photoBottomRadius,
+                    scale: scale,
+                  ),
                 ),
                 
                 // Annotation section (starts at bottom, moves up)
                 Positioned(
-                  top: 115 + noteOffset,
-                  child: _buildAnnotationSection(topCornerRadius: noteTopRadius, bottomCornerRadius: 8.0),
+                  top: (115 + noteOffset) * scale,
+                  child: _buildAnnotationSection(
+                    topCornerRadius: noteTopRadius, 
+                    bottomCornerRadius: 8.0,
+                    scale: scale,
+                  ),
                 ),
               ],
             ),
@@ -148,76 +157,84 @@ class AnimatedWelcomeWidgetState extends State<AnimatedWelcomeWidget> with Ticke
   }
   
   // Photo section with camera header
-  Widget _buildPhotoSection({required double topCornerRadius, required double bottomCornerRadius}) {
+  Widget _buildPhotoSection({
+    required double topCornerRadius, 
+    required double bottomCornerRadius,
+    required double scale,
+  }) {
     return Container(
-      width: 110,
-      height: 90,
+      width: 110 * scale,
+      height: 90 * scale,
       decoration: BoxDecoration(
-        color: const Color(0xFF1485FD),
+        color: const Color(0xFF009688),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(topCornerRadius),
-          topRight: Radius.circular(topCornerRadius),
-          bottomLeft: Radius.circular(bottomCornerRadius),
-          bottomRight: Radius.circular(bottomCornerRadius),
+          topLeft: Radius.circular(topCornerRadius * scale),
+          topRight: Radius.circular(topCornerRadius * scale),
+          bottomLeft: Radius.circular(bottomCornerRadius * scale),
+          bottomRight: Radius.circular(bottomCornerRadius * scale),
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            blurRadius: 4 * scale,
+            offset: Offset(0, 1 * scale),
           ),
         ],
       ),
-      child: const Center(
+      child: Center(
         child: Icon(
           Icons.camera_alt,
           color: Colors.white,
-          size: 32,
+          size: 32 * scale,
         ),
       ),
     );
   }
   
   // Annotation section (note card)
-  Widget _buildAnnotationSection({required double topCornerRadius, required double bottomCornerRadius}) {
+  Widget _buildAnnotationSection({
+    required double topCornerRadius, 
+    required double bottomCornerRadius,
+    required double scale,
+  }) {
     return Container(
-      width: 110,
-      height: 60,
+      width: 110 * scale,
+      height: 60 * scale,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(topCornerRadius),
-          topRight: Radius.circular(topCornerRadius),
-          bottomLeft: Radius.circular(bottomCornerRadius),
-          bottomRight: Radius.circular(bottomCornerRadius),
+          topLeft: Radius.circular(topCornerRadius * scale),
+          topRight: Radius.circular(topCornerRadius * scale),
+          bottomLeft: Radius.circular(bottomCornerRadius * scale),
+          bottomRight: Radius.circular(bottomCornerRadius * scale),
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            blurRadius: 4 * scale,
+            offset: Offset(0, 1 * scale),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(10.0),
+        padding: EdgeInsets.all(10.0 * scale),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Container(
-              height: 3,
-              width: 90,
+              height: 3 * scale,
+              width: 90 * scale,
               color: const Color(0xFFB4DAFF),
             ),
             Container(
-              height: 3,
-              width: 70,
+              height: 3 * scale,
+              width: 70 * scale,
               color: const Color(0xFFDFEAFB),
             ),
             Container(
-              height: 3,
-              width: 60,
+              height: 3 * scale,
+              width: 60 * scale,
               color: const Color(0xFFB4DAFF),
             ),
           ],

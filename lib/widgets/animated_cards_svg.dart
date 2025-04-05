@@ -27,12 +27,12 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
     // Single controller for synchronized animation
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 800),
     );
     
     // Create a single animation for all cards
     _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     
     // Start animation if flag is true
@@ -59,7 +59,9 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
   
   void _startAnimation() async {
     await Future.delayed(const Duration(milliseconds: 300)); // Initial delay
-    _controller.forward();
+    if (mounted) {
+      _controller.forward();
+    }
   }
 
   @override
@@ -74,27 +76,28 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
       child: AnimatedBuilder(
         animation: _slideAnimation,
         builder: (context, child) {
+          final scale = MediaQuery.of(context).size.width < 400 ? 0.7 : 1.0;
           return SizedBox(
-            width: 240,
-            height: 160,
+            width: 240 * scale,
+            height: 160 * scale,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 // Background rectangle
                 Positioned(
-                  left: 55,
-                  top: 5,
-                  width: 135,
-                  height: 150,
+                  left: 55 * scale,
+                  top: 5 * scale,
+                  width: 135 * scale,
+                  height: 150 * scale,
                   child: Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5DDC7),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(10 * scale),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.amber.withOpacity(0.3),
-                          blurRadius: 5,
-                          spreadRadius: 1,
+                          blurRadius: 5 * scale,
+                          spreadRadius: 1 * scale,
                         ),
                       ],
                     ),
@@ -104,25 +107,25 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
                 // Top card (first row) - starts left, moves right
                 Positioned(
                   // Lerp between starting position (left) and end position (perfectly centered)
-                  left: lerpDouble(20, 60, _slideAnimation.value)!,
-                  top: 20,
-                  child: _buildCardSimple(false),
+                  left: lerpDouble(20, 60, _slideAnimation.value)! * scale,
+                  top: 20 * scale,
+                  child: _buildCardSimple(false, scale),
                 ),
                 
                 // Middle card (second row) - starts right, moves left
                 Positioned(
                   // Lerp between starting position (right) and end position (perfectly centered)
-                  left: lerpDouble(90, 60, _slideAnimation.value)!,
-                  top: 60,
-                  child: _buildCardSimple(true),
+                  left: lerpDouble(90, 60, _slideAnimation.value)! * scale,
+                  top: 60 * scale,
+                  child: _buildCardSimple(true, scale),
                 ),
                 
                 // Bottom card (third row) - starts left, moves right
                 Positioned(
                   // Lerp between starting position (left) and end position (perfectly centered)
-                  left: lerpDouble(20, 60, _slideAnimation.value)!,
-                  top: 100,
-                  child: _buildCardSimple(false),
+                  left: lerpDouble(20, 60, _slideAnimation.value)! * scale,
+                  top: 100 * scale,
+                  child: _buildCardSimple(false, scale),
                 ),
               ],
             ),
@@ -133,43 +136,46 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
   }
   
   // Card widget
-  Widget _buildCardSimple(bool isRightAligned) {
+  Widget _buildCardSimple(bool isRightAligned, double scale) {
     return Container(
-      width: 125,
-      height: 35,
+      width: 125 * scale,
+      height: 35 * scale,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(5 * scale),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.16),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
+            blurRadius: 3 * scale,
+            offset: Offset(0, 2 * scale),
           ),
         ],
       ),
       child: Row(
         children: [
           // Camera box on left for left-aligned cards
-          if (!isRightAligned) _buildCameraIcon(),
+          if (!isRightAligned) _buildCameraIcon(scale),
           
           // Text lines in the middle
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 4.0),
+              padding: EdgeInsets.symmetric(
+                horizontal: 6.0 * scale, 
+                vertical: 4.0 * scale,
+              ),
               child: Stack(
                 children: [
                   // Top text line
                   Positioned(
                     left: 0,
-                    top: 6,
-                    right: 10,
+                    top: 6 * scale,
+                    right: 10 * scale,
                     child: Container(
-                      height: 5,
+                      height: 5 * scale,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: const Color(0xFFB4DAFF),
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(3 * scale),
                       ),
                     ),
                   ),
@@ -177,14 +183,14 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
                   // Bottom text line
                   Positioned(
                     left: 0,
-                    top: 18,
-                    right: 25,
+                    top: 18 * scale,
+                    right: 25 * scale,
                     child: Container(
-                      height: 5,
+                      height: 5 * scale,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: const Color(0xFFDEE9FC),
-                        borderRadius: BorderRadius.circular(3),
+                        borderRadius: BorderRadius.circular(3 * scale),
                       ),
                     ),
                   ),
@@ -194,24 +200,24 @@ class AnimatedCardsSvgState extends State<AnimatedCardsSvg> with TickerProviderS
           ),
           
           // Camera box on right for right-aligned cards
-          if (isRightAligned) _buildCameraIcon(),
+          if (isRightAligned) _buildCameraIcon(scale),
         ],
       ),
     );
   }
   
-  Widget _buildCameraIcon() {
+  Widget _buildCameraIcon(double scale) {
     return Container(
-      width: 35,
-      height: 35,
+      width: 35 * scale,
+      height: 35 * scale,
       decoration: BoxDecoration(
-        color: const Color(0xFF1485FD),
-        borderRadius: BorderRadius.circular(5),
+        color: const Color(0xFF009688),
+        borderRadius: BorderRadius.circular(5 * scale),
       ),
-      child: const Icon(
+      child: Icon(
         Icons.camera_alt_outlined,
         color: Colors.white,
-        size: 18,
+        size: 18 * scale,
       ),
     );
   }
